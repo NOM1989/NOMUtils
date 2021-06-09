@@ -20,10 +20,8 @@ intents.presences = False
 intents.members = True
 
 bot = commands.Bot(
-    command_prefix=[
-        "e!",
-        "?"
-    ],
+    command_prefix=["?"],
+    # command_prefix=["e!"],
     owner_id=421362214558105611,
     AllowedMentions=(False),
     case_insensitive=True,
