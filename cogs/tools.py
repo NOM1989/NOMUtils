@@ -75,7 +75,7 @@ class Tools(commands.Cog):
         chunked_list.append(current_large_chunk) #Add it once more as it has gone through all the sentances
         return chunked_list
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['summarize'])
     async def summary(self, ctx, member: discord.Member = None, start_message: discord.Message = None):
         await ctx.message.delete()
         if member and start_message:
@@ -88,9 +88,9 @@ class Tools(commands.Cog):
             # Test message id: 795938892964298762-852186939019755560
             summary_list = summarize(members_messages_txt, split=True)
             # print(summary_list)
-            summary_list = await self.split_long_text(summary_list) #Reusing the old var to hopefully reduce memory usage? idk if it works like that tho
-            # print(summary_list)
+            print(summary_list)
             if summary_list:
+                summary_list = await self.split_long_text(summary_list) #Reusing the old var to hopefully reduce memory usage? idk if it works like that tho
                 await ctx.message.author.send(f'**\-\-\-\nSummary of {member.name}\'s last messages in {ctx.guild.name}-{ctx.channel.name}**')
                 for chunk in summary_list:
                     await ctx.message.author.send(chunk)
@@ -100,7 +100,7 @@ class Tools(commands.Cog):
         elif member == None:
             await ctx.message.author.send('A user must be specified `cmd member start_message`')
         elif start_message == None:
-            await ctx.message.author.send('A starting message must be specified `cmd member start_message`')#
+            await ctx.message.author.send('A starting message must be specified `cmd member start_message`')
 
 def setup(bot):
     bot.add_cog(Tools(bot))
