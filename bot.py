@@ -21,7 +21,8 @@ intents.members = True
 
 bot = commands.Bot(
     command_prefix=[
-        "e!"
+        "e!",
+        "?"
     ],
     owner_id=421362214558105611,
     AllowedMentions=(False),
@@ -35,7 +36,7 @@ bot.remove_command('help')
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name='poggers'))
-    print('Ers is ready.')
+    print('NOMUtils is ready.')
 
 
 
