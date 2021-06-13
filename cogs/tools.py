@@ -1,14 +1,13 @@
-from re import split
 from discord.ext import tasks, commands
-import discord
 from random import randint
-
-from gensim.summarization.summarizer import summarize
+from asyncio import sleep
 
 class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.current_ctx = None
+        self.current_vc_id = None
+        self.inital_category = None
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -19,13 +18,13 @@ class Tools(commands.Cog):
     @tasks.loop(seconds=2.2)
     async def vc_evasion(self):
         ctx = self.current_ctx
-        if ctx.author.voice: #User is still in a vc
+        if ctx.author.voice and ctx.author.voice.channel.id == self.current_vc_id: #User is still in a vc
             category_count = len(ctx.guild.categories)
             if category_count > 1: #This only works if there is more than one category
                 target_category = ctx.author.voice.channel.category
                 while target_category == ctx.author.voice.channel.category: #If you get unlucky could cause a temporary ifinate loop
                     target_category = ctx.guild.categories[randint(0, category_count-1)]
-                    print(target_category.name, ctx.author.voice.channel.category.name)
+                    # print(target_category.name, ctx.author.voice.channel.category.name)
                 await ctx.author.voice.channel.move(end=True, category=target_category, sync_permissions=False)
         else: #The user has left the vc
             self.vc_evasion.cancel()
@@ -37,11 +36,16 @@ class Tools(commands.Cog):
         #Maybe add a thing where it returns it to og pos
         if ctx.author.voice:
             if self.vc_evasion.is_running():
-                self.current_ctx = None
                 self.vc_evasion.stop()
+                await ctx.author.voice.channel.move(end=True, category=self.inital_category, sync_permissions=False)
+                self.current_ctx = None
+                self.current_vc_id = None
+                self.inital_category = None
                 await ctx.send(':person_standing: Your vc is no longer on the run')
             else:
                 self.current_ctx = ctx
+                self.current_vc_id = ctx.author.voice.channel.id
+                self.inital_category = ctx.author.voice.channel.category
                 self.vc_evasion.start()
                 await ctx.send(':person_running: Your vc is now on the run')
         else:
@@ -63,44 +67,26 @@ class Tools(commands.Cog):
         else:
             await ctx.send('Your vc is not running')
 
-    async def split_long_text(self, sentances_list):
-        chunked_list = []
-        current_large_chunk = ''
-        for sentance in sentances_list:
-            if len(current_large_chunk + sentance) < 2000: #Discord message limit
-                current_large_chunk = current_large_chunk + sentance + '\n'
+    @commands.command(hidden=True)
+    async def test(self, ctx):
+        # webhook = await ctx.channel.create_webhook(name='DeletedUser')
+        # webhooks = await ctx.channel.webhooks()
+        # print(webhooks)
+        # for webhook in webhooks:
+        #     # print(webhook.user, ctx.me.name+ctx.me.name)
+        #     # if webhook.user == ctx.me.name:
+        #     #     print('Using a webhook')
+        #     print(webhook.id) #853424812008931338
+            # webhook_to_use = webhook
+        for member in ctx.channel.members:
+            webhook = await ctx.channel.create_webhook(name='DeletedUser')
+            if member.nick:
+                name_to_use = member.nick
             else:
-                chunked_list.append(current_large_chunk)
-                current_large_chunk = ''
-        chunked_list.append(current_large_chunk) #Add it once more as it has gone through all the sentances
-        return chunked_list
-
-    @commands.command(hidden=True, aliases=['summarize'])
-    async def summary(self, ctx, member: discord.Member = None, start_message: discord.Message = None):
-        await ctx.message.delete()
-        if member and start_message:
-            members_messages_txt = ''
-            async for message in ctx.channel.history(limit=2500, oldest_first=True, after=start_message):
-                if message.author == member:
-                    members_messages_txt = members_messages_txt + message.content + '\n' #Gensim handles converting newlines into sentance breaks
-            
-            # print(members_messages_txt)
-            # Test message id: 795938892964298762-852186939019755560
-            summary_list = summarize(members_messages_txt, split=True)
-            # print(summary_list)
-            print(summary_list)
-            if summary_list:
-                summary_list = await self.split_long_text(summary_list) #Reusing the old var to hopefully reduce memory usage? idk if it works like that tho
-                await ctx.message.author.send(f'**\-\-\-\nSummary of {member.name}\'s last messages in {ctx.guild.name}-{ctx.channel.name}**')
-                for chunk in summary_list:
-                    await ctx.message.author.send(chunk)
-            else:
-                await ctx.message.author.send(f'Could not summarise {member.name}\'s last messages in {ctx.guild.name}-{ctx.channel.name}')
-
-        elif member == None:
-            await ctx.message.author.send('A user must be specified `cmd member start_message`')
-        elif start_message == None:
-            await ctx.message.author.send('A starting message must be specified `cmd member start_message`')
+                name_to_use = member.name
+            await webhook.send(content='Testing :)', username=name_to_use, avatar_url=member.avatar_url)
+            await webhook.delete()
+            await sleep(0.5)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
