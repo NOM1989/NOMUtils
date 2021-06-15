@@ -1,10 +1,10 @@
 from discord.ext import commands
-# import asyncio
-
+from time import time
 
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.last_clear = None
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -44,6 +44,20 @@ class Admin(commands.Cog):
         else:
             await ctx.send('\N{OK HAND SIGN}')
 
+    @commands.command(hidden=True, aliases=['purge'])
+    async def clear(self, ctx, *, amount: int):
+        """Clears the specified amount of messages"""
+        # del_message_list = ctx.channel.purge(limit=amount) #If you want to get the messages deleted
+        if amount <= 50:
+            if time() - self.last_clear > 3:
+                await ctx.channel.purge(limit=amount+1) #+1 to remove the cmd message
+                self.last_clear = round(time(), 6)
+            else:
+                await ctx.message.delete()
+                await ctx.send('Cleared within 3 seconds, assuming message repeted due to connection issues.', delete_after=8.0)
+        else:
+            await ctx.message.delete()
+            await ctx.send('Amount > 50, assuming typo.', delete_after=8.0)
 
 def setup(bot):
     bot.add_cog(Admin(bot))
