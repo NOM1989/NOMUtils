@@ -11,7 +11,7 @@ import os
 
 TOKEN = 'ODUxOTM4ODQ4OTg3ODA3NzQ0.YL_j4Q.UHUbYlx60fDK-6_4dCiF1irbQMA'
 
-extensions = ('cogs.admin', 'cogs.tools')
+extensions = ('cogs.admin', 'cogs.tools', 'cogs.summary')
 
 # Intents initialisation
 intents = discord.Intents.default()
@@ -23,11 +23,11 @@ bot = commands.Bot(
     command_prefix=["?"],
     # command_prefix=["e!"],
     owner_id=421362214558105611,
-    AllowedMentions=(False),
+    allowed_mentions=discord.AllowedMentions(everyone=False),
     case_insensitive=True,
     help_command=None,
     intents=intents
-) #allowed_mentions=(False) makes it so not able to @everyone ever (globally)
+) #allowed_mentions makes it so not able to @everyone ever (globally)
 
 bot.remove_command('help')
 
@@ -35,8 +35,6 @@ bot.remove_command('help')
 async def on_ready():
     await bot.change_presence(activity=discord.Game(name='poggers'))
     print('NOMUtils is ready.')
-
-
 
 
 if __name__ == '__main__':
