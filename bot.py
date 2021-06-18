@@ -1,15 +1,8 @@
+from dotenv import load_dotenv
+load_dotenv()
 import discord
 from discord.ext import commands
-import asyncio
-import json
-from time import sleep
-from time import time as time_import
-from datetime import timedelta
 import os
-
-# os.chdir(r'/Users/nicholasmichau/Desktop')
-
-TOKEN = 'ODUxOTM4ODQ4OTg3ODA3NzQ0.YL_j4Q.UHUbYlx60fDK-6_4dCiF1irbQMA'
 
 extensions = ('cogs.admin', 'cogs.tools', 'cogs.summary')
 
@@ -36,7 +29,7 @@ async def on_ready():
     await bot.change_presence(activity=discord.Game(name='poggers'))
     print('NOMUtils is ready.')
 
-
+token = os.getenv('BOT_TOKEN')
 if __name__ == '__main__':
     for extension in extensions:
         try:
@@ -44,4 +37,4 @@ if __name__ == '__main__':
         except Exception as error:
             print('{} cannot be loaded. [{}]'.format(extension, error))
 
-    bot.run(TOKEN)
+    bot.run(token)
