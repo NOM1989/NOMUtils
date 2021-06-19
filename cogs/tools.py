@@ -159,6 +159,22 @@ class Tools(commands.Cog):
                 reply = reply + ' Blame Soham.'
         await ctx.send(reply)
 
+    @commands.command(hidden=True, aliases=['silencemedia'])
+    async def silence(self, ctx, *, since_number: int = None):
+        """Deletes messages starting with ? (bot prefix)"""
+        if since_number == None:
+            since_number = 60
+        
+        def is_the_media(message):
+            return message.content.startswith('?')
+
+        deleted = await ctx.channel.purge(limit=since_number, check=is_the_media)
+        number_of_deleted = len(deleted)
+        if number_of_deleted:
+            await ctx.send(f':shushing_face: Silenced {number_of_deleted} media <:okcool:804285714312986645>')
+        else:
+            await ctx.message.delete()
+
     @commands.command(hidden=True)
     async def say(self, ctx, *, text):
         """Says what you tell it to"""
