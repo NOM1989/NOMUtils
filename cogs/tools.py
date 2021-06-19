@@ -125,7 +125,7 @@ class Tools(commands.Cog):
             # find_old_webhook() - Add a way to find and use old webhooks
             webhook = await channel.create_webhook(name='DeletedUser')
             await webhook.send(content=text, username=name_to_use, avatar_url=member.avatar_url)
-            # await webhook.delete()
+            await webhook.delete()
 
     @commands.command(hidden=True, aliases=['poofers'])
     async def clear_roles(self, ctx, member: discord.Member):
