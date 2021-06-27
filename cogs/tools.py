@@ -136,6 +136,7 @@ class Tools(commands.Cog):
             for role in member.roles:
                 if len(replace_roles) < 1:
                     replace_roles.append(role)
+                    break
             await member.edit(roles=replace_roles)
             self.tmp_role_storage[str(member.id)] = origional_roles
             if ctx.invoked_with == 'poofers':
