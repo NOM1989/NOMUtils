@@ -31,7 +31,11 @@ class Tools(commands.Cog):
                 await ctx.author.voice.channel.move(end=True, category=target_category, sync_permissions=False)
         else: #The user has left the vc
             self.vc_evasion.cancel()
-            await ctx.send(f'{ctx.author.mention} :x: You left the vc, so it has stoped running')
+            await ctx.author.voice.channel.move(end=True, category=self.inital_category, sync_permissions=False)
+            self.current_ctx = None
+            self.current_vc_id = None
+            self.inital_category = None
+            await ctx.send(f'{ctx.author.mention} :x: You left the vc, so it has stopped running')
 
     @commands.command(hidden=True)
     async def vcrun(self, ctx):
@@ -167,7 +171,7 @@ class Tools(commands.Cog):
             since_number = 60
         
         def is_the_media(message):
-            return message.content.startswith('?')
+            return message.content.startswith('?') and message != ctx.message
 
         deleted = await ctx.channel.purge(limit=since_number, check=is_the_media)
         number_of_deleted = len(deleted)
