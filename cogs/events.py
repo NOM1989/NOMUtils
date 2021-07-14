@@ -10,7 +10,7 @@ class Events(commands.Cog):
         if not message.author.bot:
             content = message.content.lower()
             spaces_count = content.count(' ')
-            if content == 'hold up':
+            if content in ('hold up', 'hol up'):
                 officer_emojis = (':police_officer:', ':man_police_officer:', ':woman_police_officer:')
                 await message.channel.send(f':raised_hand:{choice(officer_emojis)}:raised_back_of_hand:')
             if content.find('another day') != -1 and spaces_count <= 3:
