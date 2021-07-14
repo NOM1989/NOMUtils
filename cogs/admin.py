@@ -89,6 +89,7 @@ class Admin(commands.Cog):
         if ctx.author.id == owner_id:
             to_return = True
         elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
+            # utils.get(message.author.roles, name="Nitro Booster") - A better way? Maybe impliment later
             to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
         return to_return
 
