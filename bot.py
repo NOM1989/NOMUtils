@@ -5,7 +5,8 @@ from discord.ext import commands
 import os
 # import asyncpg
 
-extensions = ('cogs.admin', 'cogs.tools', 'cogs.events', 'cogs.summary')
+extensions = ('cogs.owner', 'cogs.admin', 'cogs.tools', 'cogs.events', 'cogs.summary', 'cogs.covid')
+# extensions = ('cogs.owner', 'cogs.admin', 'cogs.tools', 'cogs.covid')
 
 # Intents initialisation
 intents = discord.Intents.default()
