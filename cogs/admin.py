@@ -9,6 +9,7 @@ import re
 
 rog_server_id = 593542699081269248
 admin_role_id = 691357082070286456 #The Council
+owner_id = 421362214558105611
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -25,15 +26,22 @@ class Admin(commands.Cog):
         """Clears the specified amount of messages"""
         # del_message_list = ctx.channel.purge(limit=amount) #If you want to get the messages deleted
         await ctx.message.delete()
-        if amount <= 50:
-            if time() - self.last_clear > 3:
+        if amount <= 100:
+            if time() - self.last_clear > 2:
                 await ctx.channel.purge(limit=amount, before=ctx.message)
                 self.last_clear = round(time(), 6)
             else:
-                await ctx.send('Cleared within 3 seconds, assuming message repeted due to connection issues.', delete_after=8.0)
+                await ctx.send('Cleared within 2 seconds, assuming message repeted due to connection issues.', delete_after=8.0)
         else:
-            await ctx.send('Amount > 50, assuming typo.', delete_after=8.0)
+            await ctx.send('Amount > 100, assuming typo.', delete_after=8.0)
     
+    @commands.is_owner()
+    @commands.command(hidden=True, aliases=['mpurge'])
+    async def mclear(self, ctx, *, target_m: discord.Message):
+        """Clears up to a specified message"""
+        deleted = await ctx.channel.purge(limit=100, after=target_m)
+        await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
+
     #Delete messages between certain messages
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['del'])
@@ -42,7 +50,7 @@ class Admin(commands.Cog):
         Deletes messages within the 2 given messages
         '''
         await ctx.message.delete()
-        deleted = await ctx.channel.purge(limit=200, before=m_to, after=m_from)
+        deleted = await ctx.channel.purge(limit=100, before=m_to, after=m_from)
         await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
 
     #My inital cleanup command, but after some inspiration from R. Danny I redesigned it
@@ -78,7 +86,7 @@ class Admin(commands.Cog):
     #Add a check here if the server is rog, allow council else: owner only
     def rog_check(ctx):
         to_return = False
-        if ctx.author.id == 421362214558105611:
+        if ctx.author.id == owner_id:
             to_return = True
         elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
             to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
