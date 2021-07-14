@@ -2,8 +2,13 @@ from discord.ext import commands
 import discord
 from time import time
 
+from asyncio import sleep
 from collections import Counter
 import re
+
+
+rog_server_id = 593542699081269248
+admin_role_id = 691357082070286456 #The Council
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -19,15 +24,14 @@ class Admin(commands.Cog):
     async def clear(self, ctx, *, amount: int):
         """Clears the specified amount of messages"""
         # del_message_list = ctx.channel.purge(limit=amount) #If you want to get the messages deleted
+        await ctx.message.delete()
         if amount <= 50:
             if time() - self.last_clear > 3:
-                await ctx.channel.purge(limit=amount+1, before=ctx.message) #+1 to remove the cmd message
+                await ctx.channel.purge(limit=amount, before=ctx.message)
                 self.last_clear = round(time(), 6)
             else:
-                await ctx.message.delete()
                 await ctx.send('Cleared within 3 seconds, assuming message repeted due to connection issues.', delete_after=8.0)
         else:
-            await ctx.message.delete()
             await ctx.send('Amount > 50, assuming typo.', delete_after=8.0)
     
     #Delete messages between certain messages
@@ -73,18 +77,15 @@ class Admin(commands.Cog):
 
     #Add a check here if the server is rog, allow council else: owner only
     def rog_check(ctx):
-        if ctx.author.id == 123:
-            return True
-        elif ctx.guild:
-            if ctx.guild.id == 123:
-                return 'council' in ctx.author.roles
-            else:
-                return False
-        else:
-            return False
+        to_return = False
+        if ctx.author.id == 421362214558105611:
+            to_return = True
+        elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
+            to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
+        return to_return
 
-    
-    @commands.command()
+    @commands.command(aliases=['clean'])
+    @commands.check(rog_check)
     async def cleanup(self, ctx, search=60):
         '''
         Cleans up bot and invocation messages in a channel.
@@ -113,6 +114,8 @@ class Admin(commands.Cog):
             removed_messages.extend(f'- **{author}**: {count}' for author, count in users)
 
         await ctx.send('\n'.join(removed_messages), delete_after=10)
+        await sleep(10)
+        await ctx.message.delete()
 
 def setup(bot):
     bot.add_cog(Admin(bot))
