@@ -1,5 +1,5 @@
 from discord.ext import tasks, commands
-from random import randint
+from random import choice, randint
 from asyncio import sleep
 import discord
 
@@ -10,6 +10,7 @@ class Tools(commands.Cog):
         self.current_vc_id = None
         self.inital_category = None
         self.tmp_role_storage = {}
+        self.tmp_channel_storage = {}
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -185,6 +186,76 @@ class Tools(commands.Cog):
         """Says what you tell it to"""
         await ctx.message.delete()
         await ctx.send(text)
+
+    ########### Inital Party attempts using dict storage but it is easier to just do some string checking --> no need to store
+    # @commands.command(hidden=True)
+    # async def party(self, ctx):
+    #     """Party Time!"""
+    #     party_emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
+    #     guild_id = str(ctx.guild.id)
+    #     if guild_id not in self.tmp_channel_storage:
+    #         self.tmp_channel_storage[guild_id] = {}
+    #         for channel in ctx.guild.channels:
+    #             new_name = f'{choice(party_emojis)} {channel.name} {choice(party_emojis)}'
+    #             if len(new_name) <= 32:
+    #                 await channel.edit(name=new_name)
+    #                 self.tmp_channel_storage[guild_id][str(channel.id)] = channel.name
+    #             await sleep(2)
+    #         await ctx.send('Let the Party Begin!')
+    #     else:
+    #         await ctx.send('Guild already in storage')
+
+    # @commands.command(hidden=True)
+    # async def unparty(self, ctx):
+    #     guild_id = str(ctx.guild.id)
+    #     if guild_id in self.tmp_channel_storage:
+    #         for channel_id in self.tmp_channel_storage[guild_id]:
+    #             channel = self.bot.get_channel(int(channel_id))
+    #             await channel.edit(name=self.tmp_channel_storage[guild_id][channel_id])
+    #             await sleep(2)
+    #         await ctx.send('Party\'s Over!')
+    #         del self.tmp_channel_storage[guild_id]
+    #     else:
+    #         await ctx.send('Guild not in storage')
+    
+    # @commands.command(hidden=True)
+    # async def show(self, ctx):
+    #     if self.tmp_channel_storage:
+    #         await ctx.send(self.tmp_channel_storage)
+    #     else:
+    #         await ctx.send('Nothing to show')
+    ###########
+
+    @commands.command(hidden=True)
+    async def party(self, ctx):
+        """
+        Party Time!
+        
+        Puts party emojis in every channel name!
+        """
+        party_emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
+        for channel in ctx.guild.channels:
+            new_name = f'{choice(party_emojis)} {channel.name} {choice(party_emojis)}'
+            if len(new_name) <= 32:
+                await channel.edit(name=new_name)
+                await sleep(2)
+        await ctx.send('Let the Party Begin!')
+
+    @commands.command(hidden=True, aliases=['unparty'])
+    async def clean_channels(self, ctx):
+        """
+        Removes party emojis from all channel names.
+        """
+        party_emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
+        for channel in ctx.guild.channels:
+            clean_name = str(channel.name)
+            for emoji in party_emojis:
+                clean_name = clean_name.replace(emoji, '')
+            clean_name = clean_name.strip()
+            if clean_name != channel.name:
+                await channel.edit(name=clean_name)
+                await sleep(2)
+        await ctx.send('Channel names cleaned up!')
 
 def setup(bot):
     bot.add_cog(Tools(bot))
