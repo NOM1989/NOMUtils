@@ -235,7 +235,7 @@ class Tools(commands.Cog):
         """
         party_emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
         for channel in ctx.guild.channels:
-            new_name = f'{choice(party_emojis)} {channel.name} {choice(party_emojis)}'
+            new_name = '{0} {1} {0}'.format(choice(party_emojis), channel.name)
             if len(new_name) <= 32:
                 await channel.edit(name=new_name)
                 await sleep(2)
