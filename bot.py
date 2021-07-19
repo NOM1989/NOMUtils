@@ -29,7 +29,6 @@ bot.remove_command('help')
 
 @bot.event
 async def on_ready():
-    await bot.change_presence(activity=discord.Game(name='poggers'))
     print('NOMUtils is ready.')
 
 token = os.getenv('BOT_TOKEN')

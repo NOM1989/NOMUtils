@@ -257,5 +257,16 @@ class Tools(commands.Cog):
                 await sleep(2)
         await ctx.send('Channel names cleaned up!')
 
+    @commands.command(aliases=['dark'])
+    async def go_dark(self, ctx):
+        await self.bot.change_presence(status=discord.Status.invisible)
+        await ctx.message.add_reaction('🕵️')
+        await sleep(5)
+        await ctx.message.delete()
+    
+    @commands.command(aliases=['show'])
+    async def undark(self, ctx):
+        await self.bot.change_presence(activity=discord.Game(name='poggers'))
+
 def setup(bot):
     bot.add_cog(Tools(bot))
