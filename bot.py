@@ -3,10 +3,11 @@ load_dotenv()
 import discord
 from discord.ext import commands
 import os
+# from asyncio import sleep
 # import asyncpg
 
-extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.summary', 'cogs.covid') #cogs.events
-# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.covid')
+extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.summary') #cogs.responses
+# extensions = ('cogs.owner', 'cogs.starboard')
 
 # Intents initialisation
 intents = discord.Intents.default()
@@ -30,6 +31,8 @@ bot.remove_command('help')
 @bot.event
 async def on_ready():
     print('NOMUtils is ready.')
+    # await sleep(3)
+    # await bot.change_presence(status=discord.Status.invisible)
 
 token = os.getenv('BOT_TOKEN')
 # db_username = os.getenv('DB_USERNAME')
