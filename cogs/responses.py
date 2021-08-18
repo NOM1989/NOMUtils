@@ -1,7 +1,7 @@
 from discord.ext import commands
 from random import choice
 
-class Events(commands.Cog):
+class Responses(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -27,4 +27,4 @@ class Events(commands.Cog):
                 await message.add_reaction(choice(bless_emojis))
 
 def setup(bot):
-    bot.add_cog(Events(bot))
+    bot.add_cog(Responses(bot))
