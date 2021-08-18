@@ -43,5 +43,10 @@ class Owner(commands.Cog):
         else:
             await ctx.send('\N{OK HAND SIGN}')
 
+    @commands.command(aliases=['fuckoff'])
+    async def leave(self, ctx):
+        await ctx.send('later l0$$ers')
+        await ctx.guild.leave()
+
 def setup(bot):
     bot.add_cog(Owner(bot))
