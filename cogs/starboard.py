@@ -45,7 +45,7 @@ class Starboard(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if payload.guild_id and payload.guild_id == self.starboard_guild_id and payload.emoji.name == '⭐':
+        if payload.guild_id and payload.guild_id == self.starboard_guild_id and payload.emoji.name == '⭐' and payload.channel_id != options['starboard']['channel']: #ignore the starboard channel
             #Initialise the starboy webhook if not done already
             await self.initialise_starboy()
 
