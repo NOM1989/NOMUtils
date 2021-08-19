@@ -3,3 +3,4 @@ testing.py
 *.pyc
 .env
 starboard.json
+options.json
