@@ -52,10 +52,11 @@ class Starboard(commands.Cog):
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
 
             async def starboard_embed(message, star_count):
-                header_embed = discord.Embed(description=f"{star_count} {':star:' if star_count < self.high_stars else ':star2:'} - [jump]({message.jump_url}) - {message.channel.mention}", colour=0x2F3136)
+                header_embed = discord.Embed(description=f"{star_count} {':star:' if star_count < self.high_stars else ':star2:'} - [jump]({message.jump_url}) - {message.channel.mention}", colour=0x2F3136, timestamp=message.created_at)
                 # header_embed = discord.Embed(description=f"[Jump!]({message.jump_url}) {message.channel.mention}", colour=0x2F3136)
                 # header_embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
                 # header_embed.add_field(name=f"{star_count} {':star:' if star_count < 8 else ':star2:'} in", value=message.channel.mention)
+                header_embed.set_footer(text='Sent:')
                 return header_embed
 
             star_count = await self.get_star_count(message.reactions)
