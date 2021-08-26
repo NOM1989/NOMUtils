@@ -132,7 +132,7 @@ class Tools(commands.Cog):
             await webhook.send(content=text, username=name_to_use, avatar_url=member.avatar_url)
             await webhook.delete()
 
-    @commands.command(hidden=True, aliases=['poofers'])
+    @commands.command(hidden=True, aliases=['troll'])
     async def clear_roles(self, ctx, member: discord.Member):
         """Clears the targest roles (temp stores them so they can be returned later)"""
         if str(member.id) not in self.tmp_role_storage:
