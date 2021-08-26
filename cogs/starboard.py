@@ -116,7 +116,7 @@ class Starboard(commands.Cog):
             options = await read_data('options')
             options['starboard'][f'{category}_stars'] = val
             await write_data('options', options)
-            await ctx.send(f'{ctx.author.mention} set `{category}_stars` to **{val}**')
+            await ctx.send(f'{ctx.author.mention} set `{category}_stars` to **{val}**, reload cog for change to take effect')
         else:
             await ctx.send(f'{ctx.author.mention} Syntax error - format: `stars <low/high> <val>`')
         
