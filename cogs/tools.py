@@ -116,21 +116,19 @@ class Tools(commands.Cog):
     @commands.command(hidden=True, aliases=['remote_sudo'])
     async def rsudo(self, ctx, member_id: int, channel_id: int,  *, text):
         """Remote sudo someone"""
+        print(type(channel_id))
         channel = self.bot.get_channel(channel_id)
-        member = channel.guild.get_member(member_id)
         if channel == None:
             await ctx.send('Channel not found')
-        elif member == None:
-            await ctx.send('Member not found')
         else:
-            if member.nick:
-                name_to_use = member.nick
+            user = await self.bot.fetch_user(member_id)
+            if user == None:
+                await ctx.send('User not found')
             else:
-                name_to_use = member.name
-            # find_old_webhook() - Add a way to find and use old webhooks
-            webhook = await channel.create_webhook(name='DeletedUser')
-            await webhook.send(content=text, username=name_to_use, avatar_url=member.avatar_url)
-            await webhook.delete()
+                # find_old_webhook() - Add a way to find and use old webhooks
+                webhook = await channel.create_webhook(name='DeletedUser')
+                await webhook.send(content=text, username=user.name, avatar_url=user.avatar_url)
+                await webhook.delete()
 
     @commands.command(hidden=True, aliases=['troll'])
     async def clear_roles(self, ctx, member: discord.Member):
@@ -242,14 +240,17 @@ class Tools(commands.Cog):
         await ctx.send('Let the Party Begin!')
 
     @commands.command(hidden=True, aliases=['unparty'])
-    async def clean_channels(self, ctx):
+    async def clean_channels(self, ctx, *, clear_type):
         """
         Removes party emojis from all channel names.
         """
-        party_emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
+        if clear_type == 'rip':
+            emojis = ('💀', '🕯️', '🙏', '🪦', '😪', '😩', '😤', '🌹', '🧎‍♂️', '👏', '🇷ℹ️🅿️', '🏺', '🧲')
+        else:
+            emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
         for channel in ctx.guild.channels:
             clean_name = str(channel.name)
-            for emoji in party_emojis:
+            for emoji in emojis:
                 clean_name = clean_name.replace(emoji, '')
             clean_name = clean_name.strip()
             if clean_name != channel.name:

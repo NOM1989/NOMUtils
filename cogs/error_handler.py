@@ -59,6 +59,8 @@ class CommandErrorHandler(commands.Cog):
                 await ctx.send(f"To prevent spam, you must wait {datetime.timedelta(seconds=round(error.retry_after))} before another report.", delete_after=10)
                 await sleep(10)
                 await ctx.message.delete()
+            if ctx.command.qualified_name == 'rip':
+                await ctx.send(f'You may only change one channel name per hour! ({datetime.timedelta(seconds=round(error.retry_after))} remaining)')
 
         # elif isinstance(error, commands.NoPrivateMessage):
         #     try:
