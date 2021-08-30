@@ -8,8 +8,8 @@ class Covid(commands.Cog):
         self.bot = bot
 
     async def cog_check(self, ctx):
-        # if ctx.guild and ctx.guild.id == 593542699081269248: #ROG
-        if ctx.guild and ctx.guild.id == 776206487395631145: #Test Server
+        if ctx.guild and ctx.guild.id == 593542699081269248: #ROG
+        # if ctx.guild and ctx.guild.id == 776206487395631145: #Test Server
             return True
         else:
             return False
