@@ -56,7 +56,7 @@ class Starboard(commands.Cog):
                 # header_embed = discord.Embed(description=f"[Jump!]({message.jump_url}) {message.channel.mention}", colour=0x2F3136)
                 # header_embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
                 # header_embed.add_field(name=f"{star_count} {':star:' if star_count < 8 else ':star2:'} in", value=message.channel.mention)
-                header_embed.set_footer(text='Sent')
+                header_embed.set_footer(text=f'{message.author.mention}')
                 return header_embed
 
             star_count = await self.get_star_count(message.reactions)
