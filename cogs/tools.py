@@ -240,7 +240,7 @@ class Tools(commands.Cog):
         await ctx.send('Let the Party Begin!')
 
     @commands.command(hidden=True, aliases=['unparty'])
-    async def clean_channels(self, ctx, *, clear_type):
+    async def clean_channels(self, ctx, *, clear_type = None):
         """
         Removes party emojis from all channel names.
         """
@@ -258,7 +258,7 @@ class Tools(commands.Cog):
                 await sleep(2)
         await ctx.send('Channel names cleaned up!')
 
-    @commands.command(aliases=['dark'])
+    @commands.command(aliases=['dark', 'hide'])
     async def go_dark(self, ctx):
         await self.bot.change_presence(status=discord.Status.invisible)
         await ctx.message.add_reaction('🕵️')
@@ -267,7 +267,16 @@ class Tools(commands.Cog):
     
     @commands.command(aliases=['show'])
     async def undark(self, ctx):
-        await self.bot.change_presence(activity=discord.Game(name='poggers'))
+        await self.bot.change_presence(status=discord.Status.online)
+
+    @commands.command(aliases=['react'])
+    async def react(self, ctx, message: discord.Message, reaction = None):
+        await ctx.message.delete()
+        if reaction == None:
+            await ctx.message.author.send('Provide a reaction `message reaction`')
+        await message.add_reaction(reaction)
+
+
 
 def setup(bot):
     bot.add_cog(Tools(bot))
