@@ -6,8 +6,8 @@ import os
 # from asyncio import sleep
 # import asyncpg
 
-extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.poofboard', 'cogs.summary') #cogs.responses
-# extensions = ('cogs.owner', 'cogs.poofboard')
+extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.poofboard', 'cogs.summary', 'cogs.auto') #cogs.responses
+# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.auto')
 
 # Intents initialisation
 intents = discord.Intents.default()
@@ -48,11 +48,11 @@ if __name__ == '__main__':
     try:
         # NOTE: 127.0.0.1 is the loopback address. If db is running on the same machine as the code, this address will work
         # credentials = {"user": db_username, "password": db_pass, "database": db_name, "host": db_host}
-        # bot.db = bot.loop.run_until_complete(asyncpg.create_pool(**credentials))
+        # bot.pool = bot.loop.run_until_complete(asyncpg.create_pool(**credentials))
         bot.loop.run_until_complete(bot.start(token))
     except KeyboardInterrupt:
         # cancel all tasks lingering
-        # bot.loop.run_until_complete(bot.db.close())
+        # bot.loop.run_until_complete(bot.pool.close())
         bot.loop.run_until_complete(bot.close())
     finally:
         bot.loop.close()
