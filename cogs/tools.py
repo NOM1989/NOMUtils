@@ -269,7 +269,7 @@ class Tools(commands.Cog):
     async def undark(self, ctx):
         await self.bot.change_presence(status=discord.Status.online)
 
-    @commands.command(aliases=['react'])
+    @commands.command()
     async def react(self, ctx, message: discord.Message, reaction = None):
         await ctx.message.delete()
         if reaction == None:
