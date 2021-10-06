@@ -39,6 +39,16 @@ class Auto(commands.Cog):
     async def on_bulk_message_delete(self, messages):
         for message in messages:
             await self._on_delete_handler(message)
+    
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if after.guild and after.guild.id == rog_server_id and not after.author.bot:
+            diff_list = list(set(re.findall(r"<@&\d{18}>", before.content.lower())) - set(re.findall(r"<@&\d{18}>", after.content.lower())))
+            if diff_list:
+                string_to_send = f"{after.author.mention} mentioned: {', '.join(diff_list)}"
+                sent = await after.channel.send(string_to_send, allowed_mentions=no_mentions)
+                self.callouts[sent.id] = string_to_send
+
 
 def setup(bot):
     bot.add_cog(Auto(bot))
