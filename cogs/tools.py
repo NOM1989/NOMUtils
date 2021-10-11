@@ -275,8 +275,22 @@ class Tools(commands.Cog):
         if reaction == None:
             await ctx.message.author.send('Provide a reaction `message reaction`')
         await message.add_reaction(reaction)
-
-
+    
+    @commands.command(aliases=['emojibomb'])
+    async def poofbomb(self, ctx, emoji=None):
+        if emoji == None:
+            emoji = '🌫️'
+            await ctx.send(""":fog::fog::fog:<:blank:743650775141711983>:fog::fog::fog:<:blank:743650775141711983>:fog::fog::fog:<:blank:743650775141711983>:fog::fog::fog:
+:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:
+:fog::fog::fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog::fog::fog:
+:fog:<:blank:743650775141711983><:blank:743650775141711983><:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:<:blank:743650775141711983>:fog:
+:fog:<:blank:743650775141711983><:blank:743650775141711983><:blank:743650775141711983>:fog::fog::fog:<:blank:743650775141711983>:fog::fog::fog:<:blank:743650775141711983>:fog:""")
+        else:
+            await ctx.send(emoji)
+        num = randint(20,50)
+        async for message in ctx.channel.history(limit=num):
+            if randint(1,3) == 2:
+                await message.add_reaction(emoji)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
