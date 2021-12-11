@@ -43,6 +43,14 @@ class Starboard(commands.Cog):
                 break
         return star_count
 
+    async def starboard_embed(self, message, star_count):
+        header_embed = discord.Embed(description=f"{star_count} {':star:' if star_count < self.high_stars else ':star2:'} - [jump]({message.jump_url}) - {message.channel.mention}", colour=0x2F3136, timestamp=message.created_at)
+        # header_embed = discord.Embed(description=f"[Jump!]({message.jump_url}) {message.channel.mention}", colour=0x2F3136)
+        # header_embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
+        # header_embed.add_field(name=f"{star_count} {':star:' if star_count < 8 else ':star2:'} in", value=message.channel.mention)
+        header_embed.set_footer(text=f'{message.author.id}')
+        return header_embed
+
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.guild_id and payload.guild_id == self.starboard_guild_id and payload.emoji.name == '⭐' and payload.channel_id != options['starboard']['channel']: #ignore the starboard channel
@@ -51,14 +59,6 @@ class Starboard(commands.Cog):
 
             message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
 
-            async def starboard_embed(message, star_count):
-                header_embed = discord.Embed(description=f"{star_count} {':star:' if star_count < self.high_stars else ':star2:'} - [jump]({message.jump_url}) - {message.channel.mention}", colour=0x2F3136, timestamp=message.created_at)
-                # header_embed = discord.Embed(description=f"[Jump!]({message.jump_url}) {message.channel.mention}", colour=0x2F3136)
-                # header_embed.set_author(name=message.author.display_name, icon_url=message.author.avatar_url)
-                # header_embed.add_field(name=f"{star_count} {':star:' if star_count < 8 else ':star2:'} in", value=message.channel.mention)
-                header_embed.set_footer(text=f'{message.author.id}')
-                return header_embed
-
             star_count = await self.get_star_count(message.reactions)
             #Check if its already on the starboard
             index = f'{payload.channel_id}-{payload.message_id}'
@@ -66,7 +66,7 @@ class Starboard(commands.Cog):
             if index not in starboard_data:
                 if star_count >= self.low_stars:
                     #send message to starboard
-                    embed = await starboard_embed(message, star_count)
+                    embed = await self.starboard_embed(message, star_count)
                     #check attachments, content, To do: embeds?, stickers
                     files = []
                     if message.attachments:
@@ -83,7 +83,7 @@ class Starboard(commands.Cog):
                     await write_data('starboard', starboard_data)
             else:
                 #Update star count
-                embed = await starboard_embed(message, star_count)
+                embed = await self.starboard_embed(message, star_count)
                 await self.starboard_webhook.edit_message(starboard_data[index][2], embed=embed)
 
 
@@ -99,12 +99,17 @@ class Starboard(commands.Cog):
 
             index = f'{payload.channel_id}-{payload.message_id}'
             starboard_data = await read_data('starboard')
-            if index in starboard_data and star_count < self.low_stars:
-                await self.starboard_webhook.delete_message(starboard_data[index][1])
-                await self.starboard_webhook.delete_message(starboard_data[index][2])
-                starboard_data = await read_data('starboard')
-                del starboard_data[index]
-                await write_data('starboard', starboard_data)
+            if index in starboard_data:
+                if star_count < self.low_stars:
+                    await self.starboard_webhook.delete_message(starboard_data[index][1])
+                    await self.starboard_webhook.delete_message(starboard_data[index][2])
+                    starboard_data = await read_data('starboard')
+                    del starboard_data[index]
+                    await write_data('starboard', starboard_data)
+                else:
+                    #Update star count
+                    embed = await self.starboard_embed(message, star_count)
+                    await self.starboard_webhook.edit_message(starboard_data[index][2], embed=embed)
 
     @commands.command()
     async def stars(self, ctx, category, val: int):
