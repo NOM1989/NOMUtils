@@ -1,7 +1,12 @@
 from discord.ext import tasks, commands
+from utils import read_data, write_data
 from random import choice, randint
 from asyncio import sleep
 import discord
+import json
+
+with open('options.json') as x:
+    options = json.load(x)
 
 class Tools(commands.Cog):
     def __init__(self, bot):
@@ -11,6 +16,9 @@ class Tools(commands.Cog):
         self.inital_category = None
         self.tmp_role_storage = {}
         self.tmp_channel_storage = {}
+        self.sec_diff_for_msgs_to_count_as_batch = 8 # Default is 8 sec
+        if 'sec_diff_for_msgs_to_count_as_batch' in options:
+            self.sec_diff_for_msgs_to_count_as_batch = options['sec_diff_for_msgs_to_count_as_batch']
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -150,7 +158,7 @@ class Tools(commands.Cog):
             reply = 'Crisis averted :sunglasses:'
         await ctx.send(reply)
 
-    @commands.command(hidden=True, aliases=['unpoof', 'return_roles'])
+    @commands.command(hidden=True, aliases=['unpoof', 'return_roles', 'untroll'])
     async def replace_roles(self, ctx, member: discord.Member):
         """Restores cleared roles"""
         if str(member.id) in self.tmp_role_storage:
@@ -291,6 +299,46 @@ class Tools(commands.Cog):
         async for message in ctx.channel.history(limit=num):
             if randint(1,3) == 2:
                 await message.add_reaction(emoji)
+
+
+    async def _get_first_of_last_msg_group(self, ctx): # Find last msg in channel from user
+        last_msg_time = None
+        async for message in ctx.channel.history(limit=30, before=ctx.message):
+            if message.author == ctx.message.author:
+                # Last msg sent has been found
+                if last_msg_time == None:
+                    last_msg_time = message.created_at
+
+                # continue checking the messages (in that chunk) that are within sec_diff_for_msgs_to_count_as_batch sec of the last msg sent by the user, if not then the last msg ust have been the first of the group
+                if (last_msg_time-message.created_at).total_seconds() > self.sec_diff_for_msgs_to_count_as_batch:
+                    return message # Return msg that is over as purge deletes msgs after specified
+
+            else: # Stop if we find someone else's msg
+                if last_msg_time != None:
+                    return message # Return that other users msg as purge deletes msgs after specified
+        return #No messages from user were found
+
+    @commands.command()
+    async def regret(self, ctx):
+        """
+        Clears the last batch (up to 10) of messages from user
+        Searches the last 30 msgs in channel for a msg batch from user 
+        messages is part of the batch if it was sent within self.sec_diff_for_msgs_to_count_as_batch sec of the last one in the batch, default: 8
+        """
+        await ctx.message.delete()
+        first_msg_of_group = await self._get_first_of_last_msg_group(ctx)
+        if first_msg_of_group:
+            def is_me(m):
+                return m.author == ctx.message.author
+            await ctx.channel.purge(limit=10, after=first_msg_of_group, check=is_me)
+
+    @commands.command(aliases=['batch_size', 'batch_time', 'batch_diff', 'regret_size', 'regret_time', 'regret_diff'])
+    async def batch(self, ctx, val: int):
+        options = await read_data('options')
+        self.sec_diff_for_msgs_to_count_as_batch = val
+        options['sec_diff_for_msgs_to_count_as_batch'] = val
+        await write_data('options', options)
+        await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
 
 def setup(bot):
     bot.add_cog(Tools(bot))
