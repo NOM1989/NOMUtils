@@ -6,8 +6,8 @@ import os
 # from asyncio import sleep
 # import asyncpg
 
-extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.poofboard', 'cogs.summary', 'cogs.auto') #cogs.responses
-# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.auto')
+extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.poofboard', 'cogs.summary', 'cogs.auto', 'cogs.minecraft') #cogs.responses
+# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.minecraft')
 
 # Intents initialisation
 intents = discord.Intents.default()
