@@ -11,7 +11,7 @@ class Minecraft(commands.Cog):
         self.server = MinecraftServer("54.37.169.244", 25583) #25583 54.37.169.244:25565
 
     async def cog_check(self, ctx):
-        if ctx.guild and ctx.guild.id == 593542699081269248: #ROG
+        if (ctx.guild and ctx.guild.id == 593542699081269248) or await self.bot.is_owner(ctx.author): #ROG
         # if ctx.guild and ctx.guild.id == 776206487395631145: #Test Server
             return True
         else:
@@ -33,7 +33,7 @@ class Minecraft(commands.Cog):
                 mc_embed.set_author(name='MC Status', icon_url='https://static.wikia.nocookie.net/minecraft/images/3/3b/SkullNew.png/revision/latest/scale-to-width-down/250?cb=20190901190110')
                 mc_embed.set_footer(text='It\'s probably dead :/')
 
-        await ctx.send(embed=mc_embed)
+        await ctx.send(embed=mc_embed, delete_after=120)
 
 
     '''
