@@ -3,6 +3,7 @@ from utils import read_data, write_data
 from random import choice, randint
 from asyncio import sleep
 import discord
+from typing import Union
 import json
 
 with open('options.json') as x:
@@ -109,16 +110,61 @@ class Tools(commands.Cog):
         # else:
         #     await ctx.send('Channel not found')
 
+    # @commands.command()
+    # async def test(self, ctx):
+    #     flip_type = choice(('yes', 'yes', 'no', 'no', 'maybe'))
+    #     colour_map = {
+    #         'yes': discord.Colour.green,
+    #         'maybe': discord.Colour.yellow,
+    #         'no': discord.Colour.red
+    #     }
+    #     result_embed = discord.Embed(title=flip_type.upper(), description=f'↳:stopwatch: flip expired!', colour=colour_map[flip_type]())
+    #     result_embed.set_footer(text=f'by NOM#7666')
+
+    #     await ctx.reply(embed=result_embed, mention_author=False)
+
+    # @commands.command(brief="Send a message with a button!") # Create a command inside a cog
+    # async def button(self, ctx):
+    #     view = discord.ui.View() # Establish an instance of the discord.ui.View class
+    #     style = discord.ButtonStyle.green  # The button will be gray in color
+    #     item = discord.ui.Button(style=style, label="Read the docs!", url="https://discordpy.readthedocs.io/en/master")  # Create an item to pass into the view class.
+    #     view.add_item(item=item)  # Add that item into the view class
+    #     await ctx.send("This message has buttons!", view=view)  # Send your message with a button.
+
+    @commands.command(brief="Send the last few dms between user and the bot") # Create a command inside a cog
+    async def dms(self, ctx, user: discord.User, count: int=None, reverse=None):
+        async with ctx.typing():
+            dm_channel = await user.create_dm()
+            to_send = f'**DMs from {user}**'
+            to_send += f'\n{"-"*len(to_send)}'
+            files = []
+            async for message in dm_channel.history(limit=count+1 if reverse else count, oldest_first=True if reverse else False): #count+1 bc at the top of a dm the first msg is weird and empty
+                if message.attachments:
+                    for attachment in message.attachments:
+                        files.append(await attachment.to_file())
+                if len(to_send + '\n' + message.content) >= 2000:
+                    await ctx.send(to_send, files=files)
+                    to_send = ''
+                    files = []
+                elif len(files) >= 3:
+                    await ctx.send(files=files)
+                    files = []
+                else:
+                    to_send += '\n' + message.content
+            if to_send:
+                await ctx.send(to_send, files=files)
+        await ctx.send('`Complete!`')
+
     @commands.command(hidden=True)
-    async def sudo(self, ctx, member: discord.Member, *, text):
-        """Impersonate a member of the server"""
+    async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
+        """Impersonate a user (must share a server with this bot)"""
         await ctx.message.delete()
-        if member.nick:
-            name_to_use = member.nick
-        else:
-            name_to_use = member.name
+        files = []
+        if ctx.message.attachments:
+            for attachment in ctx.message.attachments:
+                files.append(await attachment.to_file())
         webhook = await ctx.channel.create_webhook(name='DeletedUser')
-        await webhook.send(content=text, username=name_to_use, avatar_url=member.avatar_url)
+        await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
         await webhook.delete()
     
     @commands.command(hidden=True, aliases=['remote_sudo'])
@@ -190,7 +236,10 @@ class Tools(commands.Cog):
     @commands.command(hidden=True)
     async def say(self, ctx, *, text):
         """Says what you tell it to"""
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.errors.Forbidden:
+            pass
         await ctx.send(text)
 
     ########### Inital Party attempts using dict storage but it is easier to just do some string checking --> no need to store
