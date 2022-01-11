@@ -8,6 +8,10 @@ class Owner(commands.Cog):
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
+    @commands.command(hidden=True)
+    async def ping(self, ctx):
+        await ctx.send('Pong! `Latency: {}ms`'.format(round(self.bot.latency * 1000)))
+
     @commands.command(hidden=True, aliases=['close'])
     async def shutdown(self, ctx):
         await ctx.send('`Closing connection...`')
@@ -19,9 +23,15 @@ class Owner(commands.Cog):
         try:
             self.bot.load_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            module = f'cogs.{module}'
+            try:
+                self.bot.load_extension(module)
+            except commands.ExtensionError as e:
+                await ctx.send(f'{e.__class__.__name__}: {e}')
+            else:
+                await ctx.send(f'\N{OK HAND SIGN} `Loaded: {module}`')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(f'\N{OK HAND SIGN} `Loaded: {module}`')
 
     @commands.command(hidden=True)
     async def unload(self, ctx, *, module):
@@ -29,9 +39,15 @@ class Owner(commands.Cog):
         try:
             self.bot.unload_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            module = f'cogs.{module}'
+            try:
+                self.bot.unload_extension(module)
+            except commands.ExtensionError as e:
+                await ctx.send(f'{e.__class__.__name__}: {e}')
+            else:
+                await ctx.send(f'\N{OK HAND SIGN} `Unloaded: {module}`')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(f'\N{OK HAND SIGN} `Unloaded: {module}`')
 
     @commands.command(hidden=True)
     async def reload(self, ctx, *, module):
@@ -39,9 +55,15 @@ class Owner(commands.Cog):
         try:
             self.bot.reload_extension(module)
         except commands.ExtensionError as e:
-            await ctx.send(f'{e.__class__.__name__}: {e}')
+            module = f'cogs.{module}'
+            try:
+                self.bot.reload_extension(module)
+            except commands.ExtensionError as e:
+                await ctx.send(f'{e.__class__.__name__}: {e}')
+            else:
+                await ctx.send(f'\N{OK HAND SIGN} `Reloaded: {module}`')
         else:
-            await ctx.send('\N{OK HAND SIGN}')
+            await ctx.send(f'\N{OK HAND SIGN} `Reloaded: {module}`')
 
     @commands.command(aliases=['fuckoff'])
     async def leave(self, ctx):

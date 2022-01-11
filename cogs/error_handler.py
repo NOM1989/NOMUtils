@@ -13,6 +13,7 @@ import sys
 from discord.ext import commands
 import datetime
 from asyncio import sleep
+from random import choice, randint
 
 class CommandErrorHandler(commands.Cog):
 
@@ -49,8 +50,15 @@ class CommandErrorHandler(commands.Cog):
         # Anything in ignored will return and prevent anything happening.
         if isinstance(error, ignored):
             return
+        
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
 
-        if isinstance(error, commands.DisabledCommand):
+        # I would put this in ignored but I will probably forget then not know why something isnt working
+        elif isinstance(error, commands.CheckFailure):
+            print(f'Ignoring exception in command {ctx.command}:\n  {error.__class__.__name__}: {error}', file=sys.stderr)
+
+        elif isinstance(error, commands.DisabledCommand):
             await ctx.send(f'{ctx.command} has been disabled.')
         
         #See ?tag commands on cooldown
@@ -77,6 +85,29 @@ class CommandErrorHandler(commands.Cog):
             # All other Errors not returned come here. And we can just print the default TraceBack.
             print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            error_flairs = (
+                'ripperoni pepperoni',
+                'damn',
+                ':expressionless:',
+                'pop!',
+                'sorry',
+                '<@421362214558105611> pls fix',
+                'Someone fix this',
+                'smh',
+                'this wasnt expected',
+                ':shushing_face:',
+                'rip',
+                'no its not dead - but',
+                'ok maybe its a bit broken',
+                f'{ctx.author.mention} why you gotta cause',
+                'I\'m fuming'
+                'welp',
+                'I blame you',
+                'don\'t tell Nick but',
+                'keep this one under wraps but',
+                ':triumph:'
+            )
+            await ctx.send(f"{f'{choice(error_flairs)}, a' if randint(0,1) else 'A'}n error occured: `{error.__class__.__name__}: {error}`")
 
     """Below is an example of a Local Error Handler for our command do_repeat"""
 
