@@ -27,7 +27,7 @@ class Minecraft(commands.Cog):
                 mc_embed.set_author(name='MC Status', icon_url='https://freepngimg.com/thumb/minecraft/80501-biome-square-pocket-edition-grass-minecraft-block.png')
                 if query_res.players.names:
                     mc_embed.add_field(name='Players', value='\n'.join(query_res.players.names))
-                mc_embed.set_footer(text=f'Ping: {ping}ms')
+                mc_embed.set_footer(text=f'Ping: {round(ping, 3)}ms')
             except socket.timeout:
                 mc_embed = discord.Embed(colour=discord.Colour.red(), description=f'Server did not respond!')
                 mc_embed.set_author(name='MC Status', icon_url='https://static.wikia.nocookie.net/minecraft/images/3/3b/SkullNew.png/revision/latest/scale-to-width-down/250?cb=20190901190110')
