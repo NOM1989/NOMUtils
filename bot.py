@@ -2,12 +2,14 @@ from dotenv import load_dotenv
 load_dotenv()
 import discord
 from discord.ext import commands
-import os
+from os import getenv
+import traceback
+import sys
 # from asyncio import sleep
-# import asyncpg
+import asyncpg
 
 extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.admin', 'cogs.tools', 'cogs.starboard', 'cogs.poofboard', 'cogs.summary', 'cogs.auto', 'cogs.minecraft') #cogs.responses
-# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.minecraft')
+# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.tools')
 
 # Intents initialisation
 intents = discord.Intents.default()
@@ -34,25 +36,26 @@ async def on_ready():
     # await sleep(3)
     # await bot.change_presence(status=discord.Status.invisible)
 
-token = os.getenv('BOT_TOKEN')
-# db_username = os.getenv('DB_USERNAME')
-# db_pass = os.getenv('DB_PASS')
-# db_name = os.getenv('DB_NAME')
-# db_host = os.getenv('DB_HOST')
+token = getenv('BOT_TOKEN')
+db_username = getenv('DB_USERNAME')
+db_pass = getenv('DB_PASS')
+db_name = getenv('DB_NAME')
+db_host = getenv('DB_HOST')
 if __name__ == '__main__':
     for extension in extensions:
         try:
             bot.load_extension(extension)
-        except Exception as error:
-            print('{} cannot be loaded. [{}]'.format(extension, error))
+        except Exception as e:
+            print(f'Failed to load extension {extension}.', file=sys.stderr)
+            traceback.print_exc()
     try:
         # NOTE: 127.0.0.1 is the loopback address. If db is running on the same machine as the code, this address will work
-        # credentials = {"user": db_username, "password": db_pass, "database": db_name, "host": db_host}
-        # bot.pool = bot.loop.run_until_complete(asyncpg.create_pool(**credentials))
+        credentials = {"user": db_username, "password": db_pass, "database": db_name, "host": db_host}
+        bot.pool = bot.loop.run_until_complete(asyncpg.create_pool(**credentials))
         bot.loop.run_until_complete(bot.start(token))
     except KeyboardInterrupt:
         # cancel all tasks lingering
-        # bot.loop.run_until_complete(bot.pool.close())
+        bot.loop.run_until_complete(bot.pool.close())
         bot.loop.run_until_complete(bot.close())
     finally:
         bot.loop.close()
