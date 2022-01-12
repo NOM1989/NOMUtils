@@ -1,37 +1,36 @@
 from discord.ext import commands
 import discord
 from difflib import get_close_matches
-
 from random import choice
-# from asyncio import sleep
-
-# rubber_table_sql = """CREATE TABLE IF NOT EXISTS rubber (
-#   id SERIAL PRIMARY KEY,
-#   link TEXT NOT NULL UNIQUE,
-#   type VARCHAR NOT NULL CONSTRAINT valid_type CHECK (type in ('yes', 'no', 'maybe')),
-#   rarity SMALLINT NOT NULL CONSTRAINT valid_rarity CHECK (rarity BETWEEN 0 AND 3),
-#   credit BIGINT,
-#   created TIMESTAMP DEFAULT now(),
-#   uses INT DEFAULT 0
-# );"""
-
-# user_table_sql = """CREATE TABLE IF NOT EXISTS users (
-# 	id BIGINT PRIMARY KEY,
-#   	highest_rubber_rarity SMALLINT,
-# );"""
-
-#Rarity
-# 0 - common
-# 1 - uncommon
-# 2 - rare
-# 3 - legendary
-
-#Set rariy column to int
 
 # Define a simple View that waits till the OK button pressed or timeout
-class Ok_Button(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=120)
+class OkButton(discord.ui.View):
+    def __init__(self, ctx: commands.Context,):
+        super().__init__(timeout=600)
+        self.ctx: commands.Context = ctx
+        self.pressed = {}
+
+    async def dont_press(self, user_id):
+        responses = {
+            0: 'Thou shall not press the button',
+            1: 'I said don\'t press the button',
+            2: 'You rascal',
+            3: ':black_joker:',
+            4: '**STOP PRESSING THE BUTTON**',
+            5: '...',
+            6: 'I hate you.'
+        }
+        if user_id not in self.pressed:
+            self.pressed[user_id] = -1
+        if self.pressed[user_id] < 6:
+            self.pressed[user_id] += 1
+        return responses[self.pressed[user_id]]
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        if interaction.user and interaction.user.id in (self.ctx.bot.owner_id, self.ctx.author.id):
+            return True
+        await interaction.response.send_message(await self.dont_press(interaction.user.id), ephemeral=True)
+        return False
 
     @discord.ui.button(label='OK', style=discord.ButtonStyle.green)
     async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -45,9 +44,20 @@ class Ok_Button(discord.ui.View):
 class Rubber(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.flip_approved = []
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
+
+    # Creates a list of user_ids that have added a flip to the flip db
+    async def fetch_flip_approved(self):
+        query = """
+        SELECT
+            DISTINCT credit AS id
+        FROM
+            rubber;
+        """
+        return [user['id'] for user in await self.bot.pool.fetch(query)]
 
     # @commands.command()
     # async def rtest(self, ctx):
@@ -82,17 +92,21 @@ class Rubber(commands.Cog):
         }
         result_embed = discord.Embed(title=flip_type.upper(), colour=colour_map[flip_type]())
         # result_embed.set_footer(text=f'⏱ video hidden!')
-
         return result_embed
-    
+
     @rubber.command()
     async def flip(self, ctx):
+        if not self.flip_approved:
+            self.flip_approved = await self.fetch_flip_approved()
+        if ctx.author.id not in self.flip_approved: #Handle the non flip approved
+            await ctx.reply('Sorry, you must submit a flip video to use this command!', delete_after=20)
+            return
+        
         con = self.bot.pool
         #Potentially add some kind of rarity % chance system so its not just based on how many of each rarity exist
-
         flip_type = choice(('yes', 'yes', 'no', 'no', 'maybe')) #Makes maybe more rare
 
-        #COALESCE - returns the first non-null argument.
+        #COALESCE - returns the first non-null argument within its brackets.
         query = """SELECT COALESCE((
                     SELECT MAX (rarity)
                     FROM rubber
@@ -113,7 +127,7 @@ class Rubber(commands.Cog):
 
         flip = await con.fetchrow(query, flip_type, max_rarity)
 
-        view = Ok_Button()
+        view = OkButton(ctx)
         potential_credit = self.bot.get_user(flip["credit"])
         if potential_credit:
             view.credit.label = f'Credit: {potential_credit}'
@@ -185,6 +199,28 @@ def setup(bot):
 
 
 
+# rubber_table_sql = """CREATE TABLE IF NOT EXISTS rubber (
+#   id SERIAL PRIMARY KEY,
+#   link TEXT NOT NULL UNIQUE,
+#   type VARCHAR NOT NULL CONSTRAINT valid_type CHECK (type in ('yes', 'no', 'maybe')),
+#   rarity SMALLINT NOT NULL CONSTRAINT valid_rarity CHECK (rarity BETWEEN 0 AND 3),
+#   credit BIGINT,
+#   created TIMESTAMP DEFAULT now(),
+#   uses INT DEFAULT 0
+# );"""
+
+# user_table_sql = """CREATE TABLE IF NOT EXISTS users (
+# 	id BIGINT PRIMARY KEY,
+#   	highest_rubber_rarity SMALLINT,
+# );"""
+
+#Rarity
+# 0 - common
+# 1 - uncommon
+# 2 - rare
+# 3 - legendary
+
+#Set rariy column to int
 
 
 #SQL DUMP
