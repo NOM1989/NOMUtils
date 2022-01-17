@@ -70,8 +70,8 @@ class Poofboard(commands.Cog):
                         for attachment in message.attachments:
                             files.append(await attachment.to_file())
 
-                    await self.poofboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content), files=files, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none())
-                    await self.poofboard_webhook.send(embed=embed, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none())
+                    await self.poofboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content), files=files, username=message.author.display_name, avatar_url=message.author.display_avatar.url, allowed_mentions=discord.AllowedMentions.none())
+                    await self.poofboard_webhook.send(embed=embed, username=message.author.display_name, avatar_url=message.author.display_avatar.url, allowed_mentions=discord.AllowedMentions.none())
 
                     await message.delete()
 
@@ -80,7 +80,8 @@ class Poofboard(commands.Cog):
         options = await read_data('options')
         options['poofboard']['required'] = val
         await write_data('options', options)
-        await ctx.send(f'{ctx.author.mention} set `required` to **{val}**, reload cog for change to take effect')
+        self.reactions_required = val
+        await ctx.send(f'{ctx.author.mention} set `required` to **{val}**')
         
 
 def setup(bot):

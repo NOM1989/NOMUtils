@@ -75,8 +75,8 @@ class Starboard(commands.Cog):
                     # sent_message = await self.starboard_webhook.send(embed=embed, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
                     # await self.starboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content), files=files, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none())
                     # sent_message = await self.starboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content) + ('\n<:__:877568680899272724>' if not files else ''), files=files,  embed=embed, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
-                    sent_message_1 = await self.starboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content), files=files, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
-                    sent_message_2 = await self.starboard_webhook.send(embed=embed, username=message.author.display_name, avatar_url=message.author.avatar_url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+                    sent_message_1 = await self.starboard_webhook.send(content=((message.content[:1972] + '..') if len(message.content) > 1974 else message.content), files=files, username=message.author.display_name, avatar_url=message.author.display_avatar.url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
+                    sent_message_2 = await self.starboard_webhook.send(embed=embed, username=message.author.display_name, avatar_url=message.author.display_avatar.url, allowed_mentions=discord.AllowedMentions.none(), wait=True)
                     # print(sent_message)
                     starboard_data = await read_data('starboard')
                     starboard_data[index] = [int(time()), sent_message_1.id, sent_message_2.id]
@@ -121,7 +121,7 @@ class Starboard(commands.Cog):
             options = await read_data('options')
             options['starboard'][f'{category}_stars'] = val
             await write_data('options', options)
-            await ctx.send(f'{ctx.author.mention} set `{category}_stars` to **{val}**, reload cog for change to take effect')
+            await ctx.send(f'{ctx.author.mention} set `{category}_stars` to **{val}**')
         else:
             await ctx.send(f'{ctx.author.mention} Syntax error - format: `stars <low/high> <val>`')
         
