@@ -1,43 +1,107 @@
-from discord import player
+from utils import read_data, write_data
 from discord.ext import commands
-import discord
 from mcstatus import MinecraftServer
 # from json import dumps as json_dumps
+from datetime import datetime
+import discord
 import socket
+import json
+import re
+
+with open('options.json') as x:
+    options = json.load(x)
+
+#Ensure data is present for later
+if 'minecraft' not in options:
+    options['minecraft'] = {
+        'ip': "0.0.0.0",
+        'port': 0
+    }
+    with open(f'options.json', 'w') as x:
+        json.dump(options, x, indent=2)
+###
 
 class Minecraft(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.server = MinecraftServer("54.37.169.244", 25583) #25583 54.37.169.244:25565
+        self.ip_and_port = [options['minecraft']['ip'], options['minecraft']['port']]
+        self.server = MinecraftServer(self.ip_and_port[0], self.ip_and_port[1]) #listening port on server must be set as the same as port on end of ip
 
     async def cog_check(self, ctx):
-        if (ctx.guild and ctx.guild.id == 593542699081269248) or await self.bot.is_owner(ctx.author): #ROG
         # if ctx.guild and ctx.guild.id == 776206487395631145: #Test Server
-            return True
-        else:
-            return False
+        return (ctx.guild and ctx.guild.id == 593542699081269248) or isinstance(ctx.channel, discord.DMChannel) or await self.bot.is_owner(ctx.author) #ROG
 
-    @commands.group(aliases=['minecraft'])
-    async def mc(self, ctx):
+    async def get_mc_embed(self, timestamp, bypass_min=False):
+        try:
+            ping = self.server.ping()
+            query_res = self.server.query()
+            mc_embed = discord.Embed(colour = 0x27ab3f, description=f'**{query_res.players.online}/{query_res.players.max}** players online', timestamp=timestamp)
+            mc_embed.set_author(name='MC Status', icon_url='https://freepngimg.com/thumb/minecraft/80501-biome-square-pocket-edition-grass-minecraft-block.png')
+            if query_res.players.names and (len(query_res.players.names) > 2 or bypass_min):
+                mc_embed.add_field(name='Players', value='\n'.join(query_res.players.names))
+            mc_embed.set_footer(text=f'Ping: {round(ping)}ms')
+        except (socket.timeout, OSError, ConnectionResetError, ConnectionRefusedError) as e:
+            mc_embed = discord.Embed(colour=discord.Colour.red(), description=f'Server did not respond!\nError: `{e.__class__.__name__}: {e}`', timestamp=timestamp)
+            mc_embed.set_author(name='MC Status', icon_url='https://static.wikia.nocookie.net/minecraft/images/3/3b/SkullNew.png/revision/latest/scale-to-width-down/250?cb=20190901190110')
+            mc_embed.set_footer(text=f"{'Has IP changed?' if e is ConnectionRefusedError else ''}")
+        return mc_embed
+
+    @commands.group(aliases=['mc'], invoke_without_command=True)
+    async def minecraft(self, ctx):
         async with ctx.typing():
+            mc_embed = await self.get_mc_embed(ctx.message.created_at, True if ctx.message.author.id == self.bot.owner_id else False)
+        msg = await ctx.send(embed=mc_embed)
+        await msg.add_reaction('🔄')
+
+    async def adress_to_show(self, ctx): #Hide the ip incase of command misuse (in non trusted server)
+        if ctx.guild and ctx.guild.id not in (593542699081269248, 776206487395631145):
+            return '`[REDACTED]`'
+        return f'`{self.ip_and_port[0]}:{self.ip_and_port[1]}`'
+
+    @commands.is_owner()
+    @minecraft.command(aliases=['ip_port', 'address'])
+    async def ip(self, ctx, new_ip_and_port=None):
+        """Change the ip (and port) the command querys"""
+        if new_ip_and_port:
+            # Could have made the pattern myself but: ( + https://ihateregex.io/expr/ip/ + ): + https://ihateregex.io/expr/port/
+            pattern = r'^((\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}):((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
+            # Note - could re.compile to save on processing but: "The compiled versions of the most recent
+            # patterns passed to re.compile() and the module-level matching functions are cached, so programs
+            # that use only a few regular expressions at a time needn’t worry about compiling regular expressions." ~ docs
+            match = re.fullmatch(pattern, new_ip_and_port)
+            if match:
+                ip_and_port = [match.group(1), int(match.group(5))]
+                if self.ip_and_port != ip_and_port:
+                    self.ip_and_port = [match.group(1), int(match.group(5))]
+                    self.server = MinecraftServer(self.ip_and_port[0], self.ip_and_port[1])
+                    options = await read_data('options')
+                    options['minecraft']['ip'] = self.ip_and_port[0]
+                    options['minecraft']['port'] = self.ip_and_port[1]
+                    await write_data('options', options)
+                    await ctx.reply(f"Set address to: `{self.ip_and_port[0]}:{self.ip_and_port[1]}`")
+                else:
+                    await ctx.reply(f'Address already set to: `{self.ip_and_port[0]}:{self.ip_and_port[1]}`')
+            else:
+                await ctx.reply('Sorry, address invalid - format example: `192.168.1.1:8080`')
+        else:
+            await ctx.reply(f'Current address is set to: {await self.adress_to_show(ctx)}')
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        message = reaction.message
+        if message.author == self.bot.user and reaction.emoji == '🔄' and not user.bot and message.embeds and message.embeds[0].author.name == 'MC Status':
+            await message.add_reaction('<a:typing:931524283065319446>')
+            mc_embed = await self.get_mc_embed(datetime.utcnow())
+            await message.edit(embed=mc_embed)
+            await message.remove_reaction('<a:typing:931524283065319446>', message.author) #message.author is the bot
             try:
-                ping = self.server.ping()
-                query_res = self.server.query()
-                mc_embed = discord.Embed(colour = 0x27ab3f, description=f'**{query_res.players.online}/{query_res.players.max}** players online')
-                mc_embed.set_author(name='MC Status', icon_url='https://freepngimg.com/thumb/minecraft/80501-biome-square-pocket-edition-grass-minecraft-block.png')
-                if query_res.players.names:
-                    mc_embed.add_field(name='Players', value='\n'.join(query_res.players.names))
-                mc_embed.set_footer(text=f'Ping: {round(ping, 3)}ms')
-            except socket.timeout:
-                mc_embed = discord.Embed(colour=discord.Colour.red(), description=f'Server did not respond!')
-                mc_embed.set_author(name='MC Status', icon_url='https://static.wikia.nocookie.net/minecraft/images/3/3b/SkullNew.png/revision/latest/scale-to-width-down/250?cb=20190901190110')
-                mc_embed.set_footer(text='It\'s probably dead :/')
-
-        await ctx.send(embed=mc_embed, delete_after=120)
-
+                await reaction.remove(user)
+            except discord.errors.Forbidden: #In the case of DM usage
+                pass
+        return
 
     '''
-    @mc.command()
+    @minecraft.command()
     async def online(self, ctx):
         # 'status' is supported by all Minecraft servers that are version 1.7 or higher.
         status = self.server.status()
