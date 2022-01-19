@@ -16,9 +16,9 @@ class Admin(commands.Cog):
         self.bot = bot
         self.last_clear = 0
 
-    async def cog_check(self, ctx):
-        return await self.bot.is_owner(ctx.author)
-        # return not ctx.author.bot
+    # async def cog_check(self, ctx):
+    #     return await self.bot.is_owner(ctx.author)
+    #     # return not ctx.author.bot
 
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['purge'])
