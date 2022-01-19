@@ -89,7 +89,7 @@ class Minecraft(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         message = reaction.message
-        if message.author == self.bot.user and reaction.emoji == '🔄' and not user.bot and message.embeds and message.embeds[0].author.name == 'MC Status':
+        if message.author == self.bot.user and reaction.emoji in ('🔄','🔂','🔁','🔃') and not user.bot and message.embeds and message.embeds[0].author.name == 'MC Status':
             await message.add_reaction('<a:typing:931524283065319446>')
             mc_embed = await self.get_mc_embed(datetime.utcnow())
             await message.edit(embed=mc_embed)
