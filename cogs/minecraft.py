@@ -3,6 +3,7 @@ from discord.ext import commands
 from mcstatus import MinecraftServer
 # from json import dumps as json_dumps
 from datetime import datetime
+from asyncio import sleep
 import discord
 import socket
 import json
@@ -89,7 +90,7 @@ class Minecraft(commands.Cog):
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         message = reaction.message
-        if message.author == self.bot.user and reaction.emoji in ('🔄','🔂','🔁','🔃') and not user.bot and message.embeds and message.embeds[0].author.name == 'MC Status':
+        if message.author == self.bot.user and reaction.emoji in ('🔄','🔂','🔁','🔃') and not user.bot and message.embeds and message.embeds[0].author.name == 'MC Status': #different params for this than the listeners
             await message.add_reaction('<a:typing:931524283065319446>')
             mc_embed = await self.get_mc_embed(datetime.utcnow())
             await message.edit(embed=mc_embed)
@@ -99,6 +100,24 @@ class Minecraft(commands.Cog):
             except discord.errors.Forbidden: #In the case of DM usage
                 pass
         return
+    
+    async def return_reaction(self, message, specific_check):
+        if message.author.id == self.bot.user.id and \
+            specific_check and \
+                message.embeds and \
+                    message.embeds[0].author.name == 'MC Status':
+            await sleep(10)
+            await message.add_reaction('🔄')
+
+    @commands.Cog.listener()
+    async def on_reaction_remove(self, reaction, user):
+        await self.return_reaction(reaction.message, (user.id == self.bot.user.id and reaction.emoji == '🔄')) #user.id == self.bot.user.id only adds the reaction back if the bots one was removed specifically
+    
+    @commands.Cog.listener()
+    async def on_reaction_clear(self, message, reactions):
+        await self.return_reaction(message, '🔄' in [reaction.emoji for reaction in reactions])
+
+
 
     '''
     @minecraft.command()
