@@ -57,7 +57,7 @@ class Poofboard(commands.Cog):
                 footer_embed.set_footer(text='Sent')
                 return footer_embed
 
-            if message.created_at > (datetime.today()-timedelta(days=7)): #prevent message from more than (about) a week ago from being removed
+            if message.created_at > (datetime.now(message.created_at.tzinfo)-timedelta(days=7)): #prevent message from more than (about) a week ago from being removed
                 poof_count = await self.get_poof_count(message.reactions)
                 if poof_count == self.reactions_required-1:
                     #put a warning reaction
