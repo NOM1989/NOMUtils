@@ -1,10 +1,11 @@
 from discord.ext import tasks, commands
 from utils import read_data, write_data
 from random import choice, randint
-from asyncio import sleep
+from asyncio import sleep, TimeoutError
 import discord
 from typing import Union
 import json
+from datetime import timedelta
 
 with open('options.json') as x:
     options = json.load(x)
@@ -20,6 +21,7 @@ class Tools(commands.Cog):
         self.sec_diff_for_msgs_to_count_as_batch = 8 # Default is 8 sec
         if 'sec_diff_for_msgs_to_count_as_batch' in options:
             self.sec_diff_for_msgs_to_count_as_batch = options['sec_diff_for_msgs_to_count_as_batch']
+        self.sleep_time = 0.5
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -131,6 +133,12 @@ class Tools(commands.Cog):
     #     view.add_item(item=item)  # Add that item into the view class
     #     await ctx.send("This message has buttons!", view=view)  # Send your message with a button.
 
+    # @commands.command()
+    # async def test(self, ctx):
+    #     from datetime import datetime
+    #     await ctx.send(timedelta(seconds=(ctx.message.created_at-ctx.message.created_at).total_seconds()))
+    #     # work out how to do now - created at (native and aware error :( )
+
     @commands.command(brief="Send the last few dms between user and the bot") # Create a command inside a cog
     async def dms(self, ctx, user: discord.User, count: int=None, reverse=None):
         async with ctx.typing():
@@ -241,6 +249,145 @@ class Tools(commands.Cog):
         except discord.errors.Forbidden:
             pass
         await ctx.send(text)
+
+    async def check_deep_perms(self, perms_list, perms_map, role_or_member, member, channel):
+        if isinstance(role_or_member, discord.Member):
+            if role_or_member != member:
+                return perms_map #Exit out if member is not the one in question
+        if isinstance(role_or_member, discord.Role):
+            if role_or_member not in member.roles:
+                return perms_map #Exit out if member does not have role in question
+
+        overwrite = channel.overwrites[role_or_member]
+        if not overwrite.is_empty():
+            for perm in overwrite:
+                if perm[0] in perms_list:
+                    if perm[1]:
+                        if perm[0] not in perms_map:
+                            perms_map[perm[0]] = []
+                        everyone_string = '`@everyone`'
+                        perms_map[perm[0]].append(f"{channel.mention}{f'-{role_or_member.mention if not role_or_member.is_default() else everyone_string}' if isinstance(role_or_member, discord.Role) else ''}")
+        return perms_map
+
+    @commands.command(aliases=['power'])
+    async def perms(self, ctx, member: discord.Member, read_messages=None):
+        """Shows an embed of power perms and what roles give power to the user"""
+        async with ctx.typing():
+            perms_list = ['administrator', 'ban_members', 'create_instant_invite', 'deafen_members', 'kick_members', 'manage_channels', 'manage_emojis', 'manage_emojis_and_stickers', 'manage_events', 'manage_guild', 'manage_messages', 'manage_nicknames', 'manage_roles', 'manage_threads', 'manage_webhooks', 'mention_everyone', 'move_members', 'mute_members', 'view_audit_log']
+            if read_messages: #Whether or not to show the read_mesasges perm
+                perms_list.insert(0, 'read_messages')
+            perms_map = {}
+            for role in member.roles:
+                for perm in role.permissions: #perm --> eg. ('send_messages_in_threads', True)
+                    if perm[0] in perms_list:
+                        if perm[1]:
+                            if perm[0] not in perms_map:
+                                perms_map[perm[0]] = []
+                            perms_map[perm[0]].append(role.mention if not role.is_default() else '`@everyone`')
+
+            for channel in ctx.guild.channels:
+                for role_or_member in channel.overwrites:
+                    perms_map = await self.check_deep_perms(perms_list, perms_map, role_or_member, member, channel)
+
+            e = discord.Embed(colour = 0x2F3136)
+            e.set_author(name=f'{member}\'s Perms', icon_url=member.display_avatar.url)
+            value = None
+            count = 0
+            for perm in perms_map:
+                for string in perms_map[perm]:
+                    if len(f'{value}, {string}') < 1024:
+                        if value:
+                            value = f'{value}, {string}'
+                        else:
+                            value = string
+                    else:
+                        if len(e) + len(perm) + len(value) > 6000:
+                            await ctx.reply(embed=e, allowed_mentions=discord.AllowedMentions.none())
+                            count += 1
+                            e = discord.Embed(colour = 0x2F3136)
+                            e.set_author(name=f'{member}\'s Perms {count}', icon_url=member.display_avatar.url)
+                        e.add_field(name=perm, value=value)
+                        value = string
+                if value:
+                    if len(e) + len(perm) + len(value) > 6000:
+                        await ctx.reply(embed=e, allowed_mentions=discord.AllowedMentions.none())
+                        count += 1
+                        e = discord.Embed(colour = 0x2F3136)
+                        e.set_author(name=f'{member}\'s Perms {count}', icon_url=member.display_avatar.url)
+                    e.add_field(name=perm, value=value)
+                    value = None
+        if count:
+            func = ctx.send
+        else:
+            func = ctx.reply
+        await func(embed=e, allowed_mentions=discord.AllowedMentions.none())
+
+    async def role_perms_embed(self, role):
+        role_perms = []
+        embed = discord.Embed(description=role.mention, colour=role.colour)
+        for perm in role.permissions:
+            if perm[1]:
+                role_perms.append(perm[0])
+        if not role_perms:
+            role_perms = ['Role has no perms but does not match `discord.Permissions.none()` :thinking:']
+        embed.add_field(name='Perms', value='\n'.join(role_perms))
+        return embed
+
+    @commands.command(aliases=['rolesperms','role_perms', 'roleperms'])
+    @commands.guild_only()
+    async def roles(self, ctx):
+        """Shows an embed summarising perms every role with perms"""
+        no_perms_count = 0
+        embeds = []
+        for role in ctx.guild.roles:
+            if role.permissions == discord.Permissions.none():
+                no_perms_count += 1
+            else:
+                embed = await self.role_perms_embed(role)
+                if len(embeds) < 10:
+                    embeds.append(embed)
+                else:
+                    embeds.append(embed)
+                    await ctx.send(embeds=embeds, allowed_mentions=discord.AllowedMentions.none())
+                    embeds = []
+        if embeds:
+            await ctx.send(embeds=embeds, allowed_mentions=discord.AllowedMentions.none())
+        await ctx.send(f'Done - There were {no_perms_count} roles with no perms')
+
+    @commands.command()
+    @commands.guild_only()
+    async def manageroles(self, ctx):
+        """Iterates through all roles waiting for the user to select whether to clear it of perms or not"""
+        no_perms_count = 0
+        for role in ctx.guild.roles:
+            if role.permissions == discord.Permissions.none():
+                no_perms_count += 1
+            else:
+                msg = await ctx.send(embed=await self.role_perms_embed(role), allowed_mentions=discord.AllowedMentions.none())
+                await msg.add_reaction('🧼')
+                await msg.add_reaction('❌')
+
+                def check(reaction, user):
+                    return user == ctx.message.author and \
+                        str(reaction.emoji) in ('🧼','❌')
+
+                try:
+                    reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
+                except TimeoutError:
+                    await ctx.send('Took too long, `aborting`')
+                    return
+                else:
+                    if reaction.emoji == '❌':
+                        await msg.clear_reactions()
+                    elif reaction.emoji == '🧼':
+                        try:
+                            await role.edit(permissions=discord.Permissions.none(), reason='🧹🧹🧹')
+                            await msg.delete()
+                            no_perms_count += 1
+                        except discord.errors.Forbidden:
+                            await msg.clear_reactions()
+
+        await ctx.send(f'Done - There were {no_perms_count} roles with no perms')
 
     ########### Inital Party attempts using dict storage but it is easier to just do some string checking --> no need to store
     # @commands.command(hidden=True)
@@ -388,6 +535,33 @@ class Tools(commands.Cog):
         options['sec_diff_for_msgs_to_count_as_batch'] = val
         await write_data('options', options)
         await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
+
+    @commands.group(aliases=['massrole'])
+    @commands.guild_only()
+    async def mass_role(self, ctx):
+        pass
+
+    @mass_role.command(aliases=['add'])
+    async def give(self, ctx, role: discord.Role, *, reason=None):
+        msg = await ctx.reply(f'Queued `add role` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
+        count = 0
+        for member in ctx.guild.members:
+            if role not in member.roles:
+                await member.add_roles(role, reason=reason)
+                count += 1
+                await sleep(self.sleep_time)
+        await msg.edit(f':white_check_mark: `Added` {role.mention} to **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
+
+    @mass_role.command(aliases=['take'])
+    async def remove(self, ctx, role: discord.Role, *, reason=None):
+        msg = await ctx.reply(f'Queued `remove role` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
+        count = 0
+        for member in ctx.guild.members:
+            if role in member.roles:
+                await member.remove_roles(role, reason=reason)
+                count += 1
+                await sleep(self.sleep_time)
+        await msg.edit(f':white_check_mark: `Removed` {role.mention} from **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
 
 def setup(bot):
     bot.add_cog(Tools(bot))
