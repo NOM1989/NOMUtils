@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 from asyncio import TimeoutError
+from typing import Union
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -16,7 +17,7 @@ class Public(commands.Cog):
         return embed
 
     @commands.command(aliases=['pfp', 'avitar'])
-    async def avatar(self, ctx, who: discord.Member | discord.User):
+    async def avatar(self, ctx, who: Union[discord.Member, discord.User]):
         msg = await ctx.reply(embed=await self.avatar_embed(who.mention, who.display_avatar.url), allowed_mentions = discord.AllowedMentions.none())
         if who.display_avatar != who.avatar:
             try:
