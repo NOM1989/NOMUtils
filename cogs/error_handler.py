@@ -16,9 +16,9 @@ from asyncio import sleep
 from random import choice, randint
 
 class CommandErrorHandler(commands.Cog):
-
     def __init__(self, bot):
         self.bot = bot
+        self.error_emoji = self.bot.config['emojis']['error']
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -32,7 +32,17 @@ class CommandErrorHandler(commands.Cog):
         """
 
         # This prevents any commands with local handlers being handled here in on_command_error.
-        if hasattr(ctx.command, 'on_error'):
+        # if hasattr(ctx.command, 'on_error'):
+            # return
+
+        ## Better implimentation ##
+        # https://discord.com/channels/336642139381301249/381965515721146390/938184509025816627
+        # my usual recommended solution here is anywhere you handle an error, assign context.error_handled or some other attribute
+        # in "upper" error handlers (cog and global), use hasattr to check if the attr exists
+        # if it does, don't do anything with the error
+        # if you have or want a custom context, set it in the __init__ and you can skip the ugly hasattr and just check the attr
+        ## Add: ctx.error_handled = True in any local error handlers
+        if hasattr(ctx, 'error_handled') and ctx.error_handled:
             return
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
@@ -53,6 +63,10 @@ class CommandErrorHandler(commands.Cog):
         
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
+        
+        elif isinstance(error, commands.BadUnionArgument) and error.param.name == 'who': #Used when converting to a discord member or user Object
+            await ctx.reply(f"{self.error_emoji} Sorry, I couldn't recognise that user{ctx.error_extra if hasattr(ctx, 'error_extra') else ''}", allowed_mentions=discord.AllowedMentions.none())
+            # Add any additional error info I want displayed to ctx.error_extra = error_extra - see public.py for eg
 
         # I would put this in ignored but I will probably forget then not know why something isnt working
         elif isinstance(error, commands.CheckFailure):
@@ -89,7 +103,7 @@ class CommandErrorHandler(commands.Cog):
                 'ripperoni pepperoni',
                 'damn',
                 ':expressionless:',
-                'pop!',
+                'pop',
                 'sorry',
                 '<@421362214558105611> pls fix',
                 'Someone fix this',
@@ -97,17 +111,14 @@ class CommandErrorHandler(commands.Cog):
                 'this wasnt expected',
                 ':shushing_face:',
                 'rip',
-                'no its not dead - but',
-                'ok maybe its a bit broken',
-                f'{ctx.author.mention} why you gotta cause',
+                'why you gotta cause',
                 'I\'m fuming'
                 'welp',
                 'I blame you',
-                'don\'t tell Nick but',
-                'keep this one under wraps but',
+                'keep it under wraps but',
                 ':triumph:'
             )
-            await ctx.send(f"{f'{choice(error_flairs)}, a' if randint(0,1) else 'A'}n error occured: `{error.__class__.__name__}: {error}`")
+            await ctx.reply(f"{self.error_emoji} {f'{choice(error_flairs)}, a' if randint(0,1) else 'A'}n error occured: `{error.__class__.__name__}: {error}`", allowed_mentions=discord.AllowedMentions.none())
 
     """Below is an example of a Local Error Handler for our command do_repeat"""
 
@@ -132,7 +143,6 @@ class CommandErrorHandler(commands.Cog):
     #     if isinstance(error, commands.MissingRequiredArgument):
     #         if error.param.name == 'inp':
     #             await ctx.send("You forgot to give me input to repeat!")
-
 
 def setup(bot):
     bot.add_cog(CommandErrorHandler(bot))
