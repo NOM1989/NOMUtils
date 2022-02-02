@@ -17,7 +17,7 @@ class Public(commands.Cog):
         return embed
 
     @commands.command(aliases=['pfp', 'avitar'])
-    async def avatar(self, ctx, who: Union[discord.Member, discord.User]):
+    async def avatar(self, ctx, *, who: Union[discord.Member, discord.User]):
         """
         Sends the passed users' avitar in an embed
         """
@@ -64,6 +64,7 @@ class Public(commands.Cog):
         for emoji in ctx.guild.emojis:
             emoji_list.append(f"{emoji} -- `<{'a' if emoji.animated else ''}:{emoji.name}:{emoji.id}>`")
         await ctx.reply('\n'.join(emoji_list), allowed_mentions=discord.AllowedMentions.none())
+        # Needs updating and limit usage to only ppl with manage messages (bypass for me ofc)
 
 def setup(bot):
     bot.add_cog(Public(bot))
