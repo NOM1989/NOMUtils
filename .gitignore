@@ -1,7 +1,8 @@
 .DS_Store
-testing.py
 *.pyc
+*.json
+*.sql
 .env
-starboard.json
-options.json
+testing.py
 urgh.py
+cog_template.py
