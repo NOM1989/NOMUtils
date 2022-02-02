@@ -18,8 +18,11 @@ class Public(commands.Cog):
 
     @commands.command(aliases=['pfp', 'avitar'])
     async def avatar(self, ctx, who: Union[discord.Member, discord.User]):
+        """
+        Sends the passed users' avitar in an embed
+        """
         msg = await ctx.reply(embed=await self.avatar_embed(who.mention, who.display_avatar.url), allowed_mentions = discord.AllowedMentions.none())
-        if who.display_avatar != who.avatar:
+        if who.avatar != None and who.display_avatar != who.avatar:
             try:
                 await msg.add_reaction('🔄')
                 def check(reaction, user):
@@ -35,8 +38,32 @@ class Public(commands.Cog):
                     await msg.clear_reaction('🔄')
                 except discord.Forbidden:
                     await msg.remove_reaction('🔄', msg.author)
-            except:
+            except discord.Forbidden:
                 pass
+
+    @avatar.error
+    async def avatar_handler(self, ctx, error):
+        """
+        A local Error Handler, only listens for errors in avatar
+        The global on_command_error will still be invoked after.
+        """
+        error_extra = f' - `{ctx.prefix}{ctx.invoked_with} <user>`'
+        # Check if our required argument is missing
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param.name == 'who':
+                await ctx.reply(f"{self.bot.config['emojis']['error']} You must specify a **user**{error_extra}", allowed_mentions=discord.AllowedMentions.none())
+                ctx.error_handled = True
+        else:
+            ctx.error_extra = error_extra
+
+    @commands.command(aliases=['guild_emojis'])
+    @commands.guild_only()
+    async def emojis(self, ctx):
+        """Sends a list of all the guilds' emojis"""
+        emoji_list = []
+        for emoji in ctx.guild.emojis:
+            emoji_list.append(f"{emoji} -- `<{'a' if emoji.animated else ''}:{emoji.name}:{emoji.id}>`")
+        await ctx.reply('\n'.join(emoji_list), allowed_mentions=discord.AllowedMentions.none())
 
 def setup(bot):
     bot.add_cog(Public(bot))
