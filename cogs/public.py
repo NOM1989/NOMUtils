@@ -2,6 +2,9 @@ from discord.ext import commands
 import discord
 from asyncio import TimeoutError
 from typing import Union
+from difflib import get_close_matches
+from datetime import datetime
+from random import choice
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -57,14 +60,39 @@ class Public(commands.Cog):
             ctx.error_extra = error_extra
 
     @commands.command(aliases=['guild_emojis'])
-    @commands.guild_only()
+    @commands.has_guild_permissions(manage_messages=True)
     async def emojis(self, ctx):
         """Sends a list of all the guilds' emojis"""
-        emoji_list = []
+        to_send = ''
         for emoji in ctx.guild.emojis:
-            emoji_list.append(f"{emoji} -- `<{'a' if emoji.animated else ''}:{emoji.name}:{emoji.id}>`")
-        await ctx.reply('\n'.join(emoji_list), allowed_mentions=discord.AllowedMentions.none())
-        # Needs updating and limit usage to only ppl with manage messages (bypass for me ofc)
+            string = f"{emoji} -- `<{'a' if emoji.animated else ''}:{emoji.name}:{emoji.id}>`\n"
+            if len(to_send + string) > 2000: 
+                await ctx.send(to_send)
+                to_send = ''
+            else:
+                to_send += string
+        await ctx.send(to_send)
+
+
+    @commands.group(name='is')
+    async def question(self, ctx):
+        """Replies yes or no to simple questions"""
+    
+    @question.command()
+    async def it(self, ctx, *args):
+        """Replies depending on day of week"""
+        day_specials = {
+            'friday': ('yes', 'among us fri-yay?! :partying_face:', '<:sus:822637858900148256>?', 'amongus?')
+        }
+        if len(args) > 0:
+            matches = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+            possible_match = get_close_matches(args[0], matches, n=1)
+            if possible_match:
+                day_today = datetime.today().strftime('%A').lower()
+                if day_today == possible_match[0]:
+                    await ctx.send(choice(day_specials[day_today]) if day_today in day_specials else 'yes')
+                else:
+                    await ctx.send('no')
 
 def setup(bot):
     bot.add_cog(Public(bot))
