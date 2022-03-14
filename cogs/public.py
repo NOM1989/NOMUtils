@@ -82,7 +82,8 @@ class Public(commands.Cog):
     async def it(self, ctx, *args):
         """Replies depending on day of week"""
         day_specials = {
-            'friday': ('yes', 'among us fri-yay?! :partying_face:', '<:sus:822637858900148256>?', 'amongus?')
+            'friday': ('yes', 'among us fri-yay?! :partying_face:', '<:sus:822637858900148256>?', 'amongus?'),
+            'wednesday': ('yes', 'my dudes')
         }
         if len(args) > 0:
             matches = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
