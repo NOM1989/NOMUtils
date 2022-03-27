@@ -35,13 +35,21 @@ class Public(commands.Cog):
     async def avatar_message(self, ctx, who, avatar):
         '''I convert the avatar to a file then upload that so that it is perminent,
         if we just used the url then it would be lost in the future (avatar change)'''
-        filename = 'avatar.png'
-        with BytesIO() as buffer:
-            await avatar.save(buffer)
-            avatar_file = discord.File(buffer, filename=filename)
-            embed = discord.Embed(description=f'{who.mention}\'s Avatar', colour=0x2F3136)
-            embed.set_image(url=f'attachment://{filename}')
-            return await ctx.reply(file=avatar_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
+        filename = 'avatar'
+        if avatar.is_animated():
+            filename += '.gif'
+        else:
+            filename += '.png'
+        async with ctx.typing():
+            with BytesIO() as buffer:
+                await avatar.save(buffer)
+                avatar_file = discord.File(buffer, filename=filename)
+                embed = discord.Embed(description=f'{who.mention}\'s Avatar', colour=0x2F3136)
+                embed.set_image(url=f'attachment://{filename}')
+                try:
+                    return await ctx.reply(file=avatar_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
+                except discord.errors.HTTPException:
+                    pass #Secret way to cancel
 
     @commands.command(aliases=['pfp', 'avitar'])
     async def avatar(self, ctx, *, who: Union[discord.Member, discord.User]):
