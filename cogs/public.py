@@ -5,6 +5,7 @@ from typing import Union
 from difflib import get_close_matches
 from datetime import datetime
 from random import choice
+from io import BytesIO
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -14,17 +15,39 @@ class Public(commands.Cog):
     #     return await self.bot.is_owner(ctx.author)
     #     # return not ctx.author.bot
 
-    async def avatar_embed(self, mention, avatar_url):
-        embed = discord.Embed(description=f'{mention}\'s Avatar', colour=0x2F3136)
-        embed.set_image(url=avatar_url)
-        return embed
+    # For future update of d.py
+    # async def avatar_embed(self, who, avatar, *, reply=None, edit=None, msg=None):
+    #     filename = 'avatar.png'
+
+    #     with io.BytesIO() as buffer:
+    #         await avatar.save(buffer)
+    #         avatar_file = discord.File(buffer, filename=filename)
+    #         embed = discord.Embed(description=f'{who.mention}\'s Avatar', colour=0x2F3136)
+    #         embed.set_image(url=f'attachment://{filename}')
+    #         if reply:
+    #             msg = await reply(file=avatar_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
+    #         else:
+    #             await msg.remove_attachments(msg.attachments[0])
+    #             await msg.add_files(avatar_file)
+    #             msg = await edit(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+    #         return msg
+
+    async def avatar_message(self, ctx, who, avatar):
+        '''I convert the avatar to a file then upload that so that it is perminent,
+        if we just used the url then it would be lost in the future (avatar change)'''
+        filename = 'avatar.png'
+        with BytesIO() as buffer:
+            await avatar.save(buffer)
+            avatar_file = discord.File(buffer, filename=filename)
+            embed = discord.Embed(description=f'{who.mention}\'s Avatar', colour=0x2F3136)
+            embed.set_image(url=f'attachment://{filename}')
+            return await ctx.reply(file=avatar_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(aliases=['pfp', 'avitar'])
     async def avatar(self, ctx, *, who: Union[discord.Member, discord.User]):
-        """
-        Sends the passed users' avitar in an embed
-        """
-        msg = await ctx.reply(embed=await self.avatar_embed(who.mention, who.display_avatar.url), allowed_mentions = discord.AllowedMentions.none())
+        """Sends the passed users' avitar in an embed"""
+        # msg = await self.avatar_embed(who, who.display_avatar, reply=ctx.reply) #For future update of d.py
+        msg = await self.avatar_message(ctx, who, who.display_avatar)
         if who.avatar != None and who.display_avatar != who.avatar:
             try:
                 await msg.add_reaction('🔄')
@@ -36,7 +59,9 @@ class Public(commands.Cog):
                 except TimeoutError:
                     pass
                 else:
-                    await msg.edit(embed=await self.avatar_embed(who.mention, who.avatar.url), allowed_mentions = discord.AllowedMentions.none())
+                    # msg = await self.avatar_embed(who, who.avatar, edit=msg.edit, msg=msg) #For future update of d.py
+                    await msg.delete()
+                    msg = await self.avatar_message(ctx, who, who.avatar)
                 try:
                     await msg.clear_reaction('🔄')
                 except discord.Forbidden:
@@ -71,19 +96,30 @@ class Public(commands.Cog):
                 to_send = ''
             else:
                 to_send += string
-        await ctx.send(to_send)
+        if to_send:
+            await ctx.send(to_send)
 
 
     @commands.group(name='is')
     async def question(self, ctx):
         """Replies yes or no to simple questions"""
+        pass
+        # free = ('free', '23')
+        # possible_match = get_close_matches(args[1], free, n=1)
+        # if possible_match in free:
+        #     pdog = ('pdog', 'patrick', 'pdogger', 'pat')
+        #     possible_match = get_close_matches(args[0], pdog, n=1)
+        #     if args[0] == '<@!361919376414343168>' or possible_match in pdog:
+        #         await ctx.send(f"yes{', pdog so free!' if randint(0,1) else  ''}")
+        #     else:
+        #         await ctx.send('no')
     
     @question.command()
     async def it(self, ctx, *args):
         """Replies depending on day of week"""
         day_specials = {
-            'friday': ('yes', 'among us fri-yay?! :partying_face:', '<:sus:822637858900148256>?', 'amongus?'),
-            'wednesday': ('yes', 'my dudes')
+            'friday': ('yes', 'among us fri-yay?! :partying_face:', 'yes... <:sus:822637858900148256>?'),
+            'wednesday': ('yes', 'yes, my dudes')
         }
         if len(args) > 0:
             matches = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
