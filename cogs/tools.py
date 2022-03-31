@@ -1,5 +1,5 @@
 from discord.ext import tasks, commands
-from utils import read_data, write_data
+# from utils import read_data, write_data
 from random import choice, randint
 from asyncio import sleep, TimeoutError
 import discord
@@ -163,6 +163,13 @@ class Tools(commands.Cog):
                 await ctx.send(to_send, files=files)
         await ctx.send('`Complete!`')
 
+    async def get_webook(self, channel):
+        for webhook in await channel.webhooks():
+            if webhook.user == self.bot.user and webhook.name == 'ERS':
+                return webhook
+        return await channel.create_webhook(name='ERS') #Else make one
+
+    @commands.guild_only()
     @commands.command(hidden=True)
     async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
         """Impersonate a user (must share a server with this bot)"""
@@ -171,10 +178,53 @@ class Tools(commands.Cog):
         if ctx.message.attachments:
             for attachment in ctx.message.attachments:
                 files.append(await attachment.to_file())
-        webhook = await ctx.channel.create_webhook(name='DeletedUser')
+        webhook = await self.get_webook(ctx.channel)
         await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
-        await webhook.delete()
-    
+        # await webhook.delete()
+
+    @commands.guild_only()
+    @commands.command(aliases=['massudo', 'masssudo'], enabled=False)
+    async def mass_sudo(self, ctx, *options):
+        """Impersonate users in the server to say something"""
+        reply_map = {
+            'yes': [
+                'yes',
+                'yeah',
+                'yah'
+            ]
+        }
+
+        await ctx.message.delete()
+        if len(options) == 1:
+            if options[0] in ('yes', 'no'):
+                options = reply_map[options[0]]
+
+        async def randomise(text):
+            if randint(1,3) == 1:
+                text = text.capitalize()
+            else:
+                if randint(1,5) == 1:
+                    text = text.upper()
+            if randint(1,3) == 1:
+                text = text + text[-1]*randint(0,6)
+            return text
+
+        webhook = await self.get_webook(ctx.channel)
+        for member in ctx.channel.members:
+            await webhook.send(content=await randomise(choice(options)), username=member.display_name, avatar_url=member.display_avatar.url)
+            await sleep(self.sleep_time)
+
+    @commands.guild_only()
+    @commands.command(aliases=['cleanwebhooks', 'remove_webooks', 'removewebooks'], enabled=False)
+    async def clean_webhooks(self, ctx):
+        """Cleans up sudo webhooks"""
+        count = 0
+        for webhook in ctx.guild.webhooks():
+            if webhook.user == self.bot.user and webhook.name == 'ERS':
+                count += 1
+                await webhook.delete()
+        await ctx.reply(f'Cleaned up {count} sudo webhooks!' if count else 'No webhooks to clean up!', allowed_mentions=discord.AllowedMentions.none())
+
     @commands.command(hidden=True, aliases=['remote_sudo'])
     async def rsudo(self, ctx, member_id: int, channel_id: int,  *, text):
         """Remote sudo someone"""
@@ -192,18 +242,25 @@ class Tools(commands.Cog):
                 await webhook.send(content=text, username=user.name, avatar_url=user.avatar_url)
                 await webhook.delete()
 
+    async def clear_user_roles(self, member):
+        origional_roles = list(member.roles)
+        replace_roles = []
+        for role in member.roles:
+            if len(replace_roles) < 1:
+                replace_roles.append(role)
+                break
+        try:
+            await member.edit(roles=replace_roles)
+            self.tmp_role_storage[str(member.id)] = origional_roles
+            return True
+        except discord.errors.Forbidden:
+            return False
+        
     @commands.command(hidden=True, aliases=['troll'])
     async def clear_roles(self, ctx, member: discord.Member):
         """Clears the targest roles (temp stores them so they can be returned later)"""
         if str(member.id) not in self.tmp_role_storage:
-            origional_roles = list(member.roles)
-            replace_roles = []
-            for role in member.roles:
-                if len(replace_roles) < 1:
-                    replace_roles.append(role)
-                    break
-            await member.edit(roles=replace_roles)
-            self.tmp_role_storage[str(member.id)] = origional_roles
+            await self.clear_user_roles(member)
             if ctx.invoked_with == 'poofers':
                 reply = 'Poof! :dash:'
             else:
@@ -212,12 +269,19 @@ class Tools(commands.Cog):
             reply = 'Crisis averted :sunglasses:'
         await ctx.send(reply)
 
+    async def replace_user_roles(self, member):
+        try:
+            await member.edit(roles=self.tmp_role_storage[str(member.id)])
+            del self.tmp_role_storage[str(member.id)]
+            return True
+        except discord.errors.Forbidden:
+            return False
+
     @commands.command(hidden=True, aliases=['unpoof', 'return_roles', 'untroll'])
     async def replace_roles(self, ctx, member: discord.Member):
         """Restores cleared roles"""
         if str(member.id) in self.tmp_role_storage:
-            await member.edit(roles=self.tmp_role_storage[str(member.id)])
-            del self.tmp_role_storage[str(member.id)]
+            await self.replace_user_roles(self, member)
             reply = ':fingers_crossed:'
         else:
             reply = 'Nothing to replace! :grimacing:'
@@ -528,13 +592,13 @@ class Tools(commands.Cog):
                 return m.author == ctx.message.author
             await ctx.channel.purge(limit=10, after=first_msg_of_group, check=is_me)
 
-    @commands.command(aliases=['batch_size', 'batch_time', 'batch_diff', 'regret_size', 'regret_time', 'regret_diff'])
-    async def batch(self, ctx, val: int):
-        options = await read_data('options')
-        self.sec_diff_for_msgs_to_count_as_batch = val
-        options['sec_diff_for_msgs_to_count_as_batch'] = val
-        await write_data('options', options)
-        await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
+    # @commands.command(aliases=['batch_size', 'batch_time', 'batch_diff', 'regret_size', 'regret_time', 'regret_diff'])
+    # async def batch(self, ctx, val: int):
+    #     options = await read_data('options')
+    #     self.sec_diff_for_msgs_to_count_as_batch = val
+    #     options['sec_diff_for_msgs_to_count_as_batch'] = val
+    #     await write_data('options', options)
+    #     await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
 
     @commands.group(aliases=['massrole'])
     @commands.guild_only()
@@ -562,6 +626,43 @@ class Tools(commands.Cog):
                 count += 1
                 await sleep(self.sleep_time)
         await msg.edit(f':white_check_mark: `Removed` {role.mention} from **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
+
+    @mass_role.command()
+    async def clear(self, ctx):
+        msg = await ctx.reply(f'Queued `clear roles` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
+        count = 0
+        for member in ctx.guild.members:
+            if len(member.roles) > 1:
+                result = await self.clear_user_roles(member)
+                if result:
+                    count += 1
+                    await sleep(self.sleep_time)
+        await msg.edit(f':white_check_mark: `Cleared` roles from **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
+
+    @mass_role.command()
+    async def replace(self, ctx):
+        msg = await ctx.reply(f'Queued `replace roles` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
+        count = 0
+        for member in ctx.guild.members:
+            if str(member.id) in self.tmp_role_storage:
+                result = await self.replace_user_roles(member)
+                if result:
+                    count += 1
+                    await sleep(self.sleep_time)
+        await msg.edit(f':white_check_mark: `Replaced` roles of **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
+
+    # @commands.command()
+    # async def forward(self, ctx, target_message: discord.Message, output_channel_id: int):
+    #     await ctx.message.delete()
+    #     output_channel = self.bot.get_channel(output_channel_id)
+    #     webhook = await self.get_webook(output_channel)
+    #     async for message in ctx.channel.history(limit=None, after=target_message):
+    #         files = []
+    #         if ctx.message.attachments:
+    #             for attachment in ctx.message.attachments:
+    #                 files.append(await attachment.to_file())
+    #         await webhook.send(content=message.content if message.content != None else '', username=message.author.display_name, avatar_url=message.author.display_avatar.url, files=files)
+    #         await sleep(self.sleep_time)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
