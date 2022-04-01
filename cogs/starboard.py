@@ -1,5 +1,5 @@
 from discord.ext import commands
-from utils import read_data, write_data
+from cogs.utils.utils import read_data, write_data
 import discord
 from time import time
 import json

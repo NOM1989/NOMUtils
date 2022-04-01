@@ -1,4 +1,4 @@
-from utils import read_data, write_data
+from cogs.utils.utils import read_data, write_data
 from discord.ext import commands
 from mcstatus import MinecraftServer
 # from json import dumps as json_dumps

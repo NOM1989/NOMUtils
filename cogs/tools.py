@@ -1,5 +1,5 @@
 from discord.ext import tasks, commands
-# from utils import read_data, write_data
+from cogs.utils.utils import read_data, write_data
 from random import choice, randint
 from asyncio import sleep, TimeoutError
 import discord
@@ -592,13 +592,13 @@ class Tools(commands.Cog):
                 return m.author == ctx.message.author
             await ctx.channel.purge(limit=10, after=first_msg_of_group, check=is_me)
 
-    # @commands.command(aliases=['batch_size', 'batch_time', 'batch_diff', 'regret_size', 'regret_time', 'regret_diff'])
-    # async def batch(self, ctx, val: int):
-    #     options = await read_data('options')
-    #     self.sec_diff_for_msgs_to_count_as_batch = val
-    #     options['sec_diff_for_msgs_to_count_as_batch'] = val
-    #     await write_data('options', options)
-    #     await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
+    @commands.command(aliases=['batch_size', 'batch_time', 'batch_diff', 'regret_size', 'regret_time', 'regret_diff'])
+    async def batch(self, ctx, val: int):
+        options = await read_data('options')
+        self.sec_diff_for_msgs_to_count_as_batch = val
+        options['sec_diff_for_msgs_to_count_as_batch'] = val
+        await write_data('options', options)
+        await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
 
     @commands.group(aliases=['massrole'])
     @commands.guild_only()
