@@ -7,6 +7,7 @@ import traceback
 import sys
 # from asyncio import sleep
 import asyncpg
+# from cogs.utils.cache import GuildInfo
 
 extensions = (
     'cogs.owner',
@@ -20,7 +21,8 @@ extensions = (
     'cogs.minecraft',
     'cogs.rubber',
     'cogs.public')
-# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.public')
+# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.fix')
+# keys = ('GOOGLEAPI_KEY')
 
 class NOMUtils(commands.Bot):
     def __init__(self):
@@ -43,9 +45,24 @@ class NOMUtils(commands.Bot):
 
         self.config = {
             'emojis': {
-                'error': '<:error:938203108012605470>'
-            }
+                'error': '<:error:938203108012605470>',
+                'green': '<:green:943119597144518676>'
+            },
+            'keys': {}
         }
+
+        # self.pool: asyncpg.Pool = None
+
+        # self.cache: dict[int, GuildInfo] = {}
+        # self.load_keys()
+    
+    # async def ensure_cache(self, pool: asyncpg.Pool, guild_id):
+    #     if str(guild_id) not in self.cache:
+    #         self.cache[str(guild_id)] = GuildInfo(guild_id, pool)
+
+    # def load_keys(self):
+    #     for key in keys:
+    #         self.config['keys'][key] = getenv(key)
 
 bot = NOMUtils()
 bot.remove_command('help')
@@ -56,7 +73,7 @@ async def on_ready():
     # await sleep(3)
     # await bot.change_presence(status=discord.Status.invisible)
 
-debug_mode = False #wether or not to connect to the db
+debug_mode = False #wether or not to connect to the db (True means dont connect)
 token = getenv('BOT_TOKEN')
 db_username = getenv('DB_USERNAME')
 db_pass = getenv('DB_PASS')
