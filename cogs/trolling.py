@@ -11,7 +11,7 @@ class Trolling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel: discord.TextChannel):
-        if channel.guild.id not in self.guild_ids:
+        if channel.guild.id not in self.ignored_guild_ids:
             await channel.send('first')
 
 def setup(bot):
