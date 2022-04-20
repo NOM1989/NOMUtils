@@ -49,12 +49,14 @@ class Public(commands.Cog):
                 try:
                     return await ctx.reply(file=avatar_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
                 except discord.errors.HTTPException:
-                    pass #Secret way to cancel
+                    pass #Secret way to cancel (deleting the invocation message)
 
     @commands.command(aliases=['pfp', 'avitar'])
-    async def avatar(self, ctx, *, who: Union[discord.Member, discord.User]):
-        """Sends the passed users' avitar in an embed"""
+    async def avatar(self, ctx, *, who: Union[discord.Member, discord.User] = None):
+        """Sends the passed users' avitar in an embed or the author is user not"""
         # msg = await self.avatar_embed(who, who.display_avatar, reply=ctx.reply) #For future update of d.py
+        if who == None:
+            who = ctx.message.author
         msg = await self.avatar_message(ctx, who, who.display_avatar)
         if who.avatar != None and who.display_avatar != who.avatar:
             try:
@@ -77,20 +79,21 @@ class Public(commands.Cog):
             except discord.Forbidden:
                 pass
 
-    @avatar.error
-    async def avatar_handler(self, ctx, error):
-        """
-        A local Error Handler, only listens for errors in avatar
-        The global on_command_error will still be invoked after.
-        """
-        error_extra = f' - `{ctx.prefix}{ctx.invoked_with} <user>`'
-        # Check if our required argument is missing
-        if isinstance(error, commands.MissingRequiredArgument):
-            if error.param.name == 'who':
-                await ctx.reply(f"{self.bot.config['emojis']['error']} You must specify a **user**{error_extra}", allowed_mentions=discord.AllowedMentions.none())
-                ctx.error_handled = True
-        else:
-            ctx.error_extra = error_extra
+    # No longer necessary as made avatar use the author if not provided 
+    # @avatar.error
+    # async def avatar_handler(self, ctx, error):
+    #     """
+    #     A local Error Handler, only listens for errors in avatar
+    #     The global on_command_error will still be invoked after.
+    #     """
+    #     error_extra = f' - `{ctx.prefix}{ctx.invoked_with} <user>`'
+    #     # Check if our required argument is missing
+    #     if isinstance(error, commands.MissingRequiredArgument):
+    #         if error.param.name == 'who':
+    #             await ctx.reply(f"{self.bot.config['emojis']['error']} You must specify a **user**{error_extra}", allowed_mentions=discord.AllowedMentions.none())
+    #             ctx.error_handled = True
+    #     else:
+    #         ctx.error_extra = error_extra
 
     @commands.command(aliases=['guild_emojis'])
     @commands.has_guild_permissions(manage_messages=True)
@@ -107,6 +110,40 @@ class Public(commands.Cog):
         if to_send:
             await ctx.send(to_send)
 
+    async def _emoji_message(self, ctx, emoji):
+        filename = 'emoji'
+        if emoji.animated:
+            filename += '.gif'
+        else:
+            filename += '.png'
+        async with ctx.typing():
+            with BytesIO() as buffer:
+                await emoji.save(buffer)
+                emoji_file = discord.File(buffer, filename=filename)
+                embed = discord.Embed(colour=0x2F3136)
+                embed.set_image(url=f'attachment://{filename}')
+                try:
+                    return await ctx.reply(file=emoji_file, embed=embed, allowed_mentions=discord.AllowedMentions.none())
+                except discord.errors.HTTPException:
+                    pass #Secret way to cancel (deleting the invocation message)
+
+    @commands.command()
+    async def emoji(self, ctx: commands.Context, emoji: discord.Emoji):
+        """Sends the passed emoji in an embed"""
+        await self._emoji_message(ctx, emoji)
+
+    @emoji.error
+    async def emoji_handler(self, ctx, error):
+        """
+        A local Error Handler, only listens for errors in emoji
+        The global on_command_error will still be invoked after.
+        """
+        # Check if the emoji is not found
+        if isinstance(error, commands.EmojiNotFound):
+            await ctx.reply(f"{self.bot.config['emojis']['error']} Emoji must be custom; emoji not recognised", allowed_mentions=discord.AllowedMentions.none())
+            ctx.error_handled = True
+        elif isinstance(error, commands.MissingRequiredArgument):
+            ctx.error_extra = 'You must provide an emoji'
 
     @commands.group(name='is')
     async def question(self, ctx):

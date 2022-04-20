@@ -14,14 +14,22 @@ from discord.ext import commands
 import datetime
 from asyncio import sleep
 from random import choice, randint
+from cogs.utils.utils import get_cmd_usage
 
 class CommandErrorHandler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.error_emoji = self.bot.config['emojis']['error']
 
+    def add_extra(self, ctx):
+        return f' {ctx.error_extra}' if ctx.error_extra else ''
+
+    def add_usage(self, ctx):
+        cmd_usage = get_cmd_usage(ctx)
+        return f' - `{cmd_usage}`' if cmd_usage else ''
+
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error):
         """The event triggered when an error is raised while invoking a command.
         Parameters
         ------------
@@ -44,6 +52,7 @@ class CommandErrorHandler(commands.Cog):
         ## Add: ctx.error_handled = True in any local error handlers
         if hasattr(ctx, 'error_handled') and ctx.error_handled:
             return
+        ctx.error_extra = getattr(ctx, 'error_extra', None)
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         cog = ctx.cog
@@ -62,10 +71,12 @@ class CommandErrorHandler(commands.Cog):
             return
         
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
+            text = f"{ctx.bot.config['emojis']['error']}{self.add_extra(ctx)}{self.add_usage(ctx)}"
+            await ctx.reply(text, allowed_mentions=discord.AllowedMentions.none())
+            # await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
         
         elif isinstance(error, commands.BadUnionArgument) and error.param.name == 'who': #Used when converting to a discord member or user Object
-            await ctx.reply(f"{self.error_emoji} Sorry, I couldn't recognise that user{ctx.error_extra if hasattr(ctx, 'error_extra') else ''}", allowed_mentions=discord.AllowedMentions.none())
+            await ctx.reply(f"{self.error_emoji} Sorry, I couldn't recognise that user{self.add_extra(ctx)}", allowed_mentions=discord.AllowedMentions.none())
             # Add any additional error info I want displayed to ctx.error_extra = error_extra - see public.py for eg
 
         # I would put this in ignored but I will probably forget then not know why something isnt working
