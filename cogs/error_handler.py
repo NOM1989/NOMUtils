@@ -14,30 +14,38 @@ from discord.ext import commands
 import datetime
 from asyncio import sleep
 from random import choice, randint
-from cogs.utils.utils import get_cmd_usage
+from inspect import Parameter
 
 class CommandErrorHandler(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.error_emoji = self.bot.config['emojis']['error']
 
-    def add_extra(self, ctx):
-        return f' {ctx.error_extra}' if ctx.error_extra else ''
+    # def add_extra(self, ctx: commands.Context):
+    #     return f' {ctx.error_message}' if ctx.error_message else ''
 
-    def add_usage(self, ctx):
-        cmd_usage = get_cmd_usage(ctx)
-        return f' - `{cmd_usage}`' if cmd_usage else ''
+    def get_cmd_usage(self, ctx: commands.Context):
+        """Creates a string describing the usage of the command"""
+        usage = f'{ctx.prefix}{ctx.invoked_with}'
+        for param in ctx.command.params.values():
+            if param.name not in ('self', 'ctx'):
+                if param.default == Parameter.empty:
+                    usage += f' <{param.name}>'
+                else:
+                    usage += f' [{param.name}]'
+        return usage
+
+    async def send_error(self, ctx: commands.Context, *, default_text: str = None):
+        """Sends an error to the user with optional extra info"""
+        to_send = f"{self.bot.config['emojis']['error']} "
+        to_send += ctx.error_message or default_text
+        # Add any additional error info I want displayed to ctx.error_message = error_message - see public.py for eg
+        to_send += f' - `{self.get_cmd_usage(ctx)}`' if ctx.error_add_usage else ''
+        await ctx.reply(to_send, allowed_mentions=discord.AllowedMentions.none())
+    
 
     @commands.Cog.listener()
-    async def on_command_error(self, ctx: commands.Context, error):
-        """The event triggered when an error is raised while invoking a command.
-        Parameters
-        ------------
-        ctx: commands.Context
-            The context used for command invocation.
-        error: commands.CommandError
-            The Exception raised.
-        """
+    async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        """The event triggered when an error is raised while invoking a command."""
 
         # This prevents any commands with local handlers being handled here in on_command_error.
         # if hasattr(ctx.command, 'on_error'):
@@ -50,15 +58,18 @@ class CommandErrorHandler(commands.Cog):
         # if it does, don't do anything with the error
         # if you have or want a custom context, set it in the __init__ and you can skip the ugly hasattr and just check the attr
         ## Add: ctx.error_handled = True in any local error handlers
+
         if hasattr(ctx, 'error_handled') and ctx.error_handled:
             return
-        ctx.error_extra = getattr(ctx, 'error_extra', None)
 
         # This prevents any cogs with an overwritten cog_command_error being handled here.
         cog = ctx.cog
         if cog:
             if cog._get_overridden_method(cog.cog_command_error) is not None:
                 return
+
+        ctx.error_message = getattr(ctx, 'error_message', None)
+        ctx.error_add_usage = getattr(ctx, 'error_add_usage', False)
 
         ignored = (commands.CommandNotFound, )
 
@@ -71,20 +82,20 @@ class CommandErrorHandler(commands.Cog):
             return
         
         elif isinstance(error, commands.MissingRequiredArgument):
-            text = f"{ctx.bot.config['emojis']['error']}{self.add_extra(ctx)}{self.add_usage(ctx)}"
-            await ctx.reply(text, allowed_mentions=discord.AllowedMentions.none())
+            await self.send_error(ctx)
+            # text = f"{error_base}{self.add_extra(ctx)}{self.add_usage(ctx)}"
+            # await ctx.reply(text, allowed_mentions=discord.AllowedMentions.none())
             # await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
         
         elif isinstance(error, commands.BadUnionArgument) and error.param.name == 'who': #Used when converting to a discord member or user Object
-            await ctx.reply(f"{self.error_emoji} Sorry, I couldn't recognise that user{self.add_extra(ctx)}", allowed_mentions=discord.AllowedMentions.none())
-            # Add any additional error info I want displayed to ctx.error_extra = error_extra - see public.py for eg
+            await self.send_error(ctx, default_text='Sorry, I couldn\'t recognise that user')
 
         # I would put this in ignored but I will probably forget then not know why something isnt working
         elif isinstance(error, commands.CheckFailure):
             print(f'Ignoring exception in command {ctx.command}:\n  {error.__class__.__name__}: {error}', file=sys.stderr)
 
         elif isinstance(error, commands.DisabledCommand):
-            await ctx.send(f'{ctx.command} has been disabled.')
+            await self.send_error(ctx, default_text=f'Sorry, `{ctx.command.name}` has been disabled.')
         
         #See ?tag commands on cooldown
         elif isinstance(error, commands.CommandOnCooldown):
@@ -113,23 +124,13 @@ class CommandErrorHandler(commands.Cog):
             error_flairs = (
                 'ripperoni pepperoni',
                 'damn',
-                ':expressionless:',
-                'pop',
                 'sorry',
-                '<@421362214558105611> pls fix',
-                'Someone fix this',
                 'smh',
-                'this wasnt expected',
-                ':shushing_face:',
                 'rip',
-                'why you gotta cause',
-                'I\'m fuming'
-                'welp',
-                'I blame you',
-                'keep it under wraps but',
-                ':triumph:'
+                'welp'
             )
-            await ctx.reply(f"{self.error_emoji} {f'{choice(error_flairs)}, a' if randint(0,1) else 'A'}n error occured: `{error.__class__.__name__}: {error}`", allowed_mentions=discord.AllowedMentions.none())
+            flair = f'{choice(error_flairs)}, a' if randint(0,1) else 'A'
+            await self.send_error(ctx, default_text=f'{flair}n error occured: `{error.__class__.__name__}: {error}`')
 
     """Below is an example of a Local Error Handler for our command do_repeat"""
 
