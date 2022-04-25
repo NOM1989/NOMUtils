@@ -41,7 +41,7 @@ class Fix(commands.Cog):
 
     async def forward_messages(self, from_channel: discord.TextChannel, to_channel: discord.TextChannel):
         '''Forward all messages in `from_channel` to `to_channel`'''
-        webhook = await get_webook(self.bot.user, to_channel)
+        webhook = await get_webook(self.bot, to_channel)
         async for message in from_channel.history(limit=None, oldest_first=True):
             files = []
             if message.attachments:

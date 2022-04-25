@@ -1,18 +1,19 @@
+from cogs.utils.utils import read_data, write_data, get_webook
 from discord.ext import tasks, commands
-from cogs.utils.utils import read_data, write_data
-from random import choice, randint
 from asyncio import sleep, TimeoutError
-import discord
-from typing import Union
-import json
+from random import choice, randint
 from datetime import timedelta
+from bot import NOMUtils
+from typing import Union
+import discord
+import json
 
 with open('options.json') as x:
     options = json.load(x)
 
 class Tools(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: NOMUtils = bot
         self.current_ctx = None
         self.current_vc_id = None
         self.inital_category = None
@@ -163,12 +164,6 @@ class Tools(commands.Cog):
                 await ctx.send(to_send, files=files)
         await ctx.send('`Complete!`')
 
-    async def get_webook(self, channel):
-        for webhook in await channel.webhooks():
-            if webhook.user == self.bot.user and webhook.name == 'ERS':
-                return webhook
-        return await channel.create_webhook(name='ERS') #Else make one
-
     @commands.guild_only()
     @commands.command(hidden=True)
     async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
@@ -178,9 +173,8 @@ class Tools(commands.Cog):
         if ctx.message.attachments:
             for attachment in ctx.message.attachments:
                 files.append(await attachment.to_file())
-        webhook = await self.get_webook(ctx.channel)
+        webhook = await get_webook(self.bot, ctx.channel)
         await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
-        # await webhook.delete()
 
     @commands.guild_only()
     @commands.command(aliases=['massudo', 'masssudo'], enabled=False)
@@ -209,13 +203,13 @@ class Tools(commands.Cog):
                 text = text + text[-1]*randint(0,6)
             return text
 
-        webhook = await self.get_webook(ctx.channel)
+        webhook = await self.get_webook(self.bot, ctx.channel)
         for member in ctx.channel.members:
             await webhook.send(content=await randomise(choice(options)), username=member.display_name, avatar_url=member.display_avatar.url)
             await sleep(self.sleep_time)
 
     @commands.guild_only()
-    @commands.command(aliases=['cleanwebhooks', 'remove_webooks', 'removewebooks'], enabled=False)
+    @commands.command(aliases=['cleanwebhooks', 'remove_webhooks', 'removewebhooks'], enabled=False)
     async def clean_webhooks(self, ctx):
         """Cleans up sudo webhooks"""
         count = 0
