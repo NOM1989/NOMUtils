@@ -6,7 +6,7 @@ from random import choice
 # Define a simple View that waits till the OK button pressed or timeout
 class OkButton(discord.ui.View):
     def __init__(self, ctx: commands.Context,):
-        super().__init__(timeout=600)
+        super().__init__(timeout=None)
         self.ctx: commands.Context = ctx
         self.pressed = {}
 
@@ -46,9 +46,6 @@ class Rubber(commands.Cog):
         self.bot = bot
         self.flip_approved = []
 
-    async def cog_check(self, ctx):
-        return await self.bot.is_owner(ctx.author)
-
     # Creates a list of user_ids that have added a flip to the flip db
     async def fetch_flip_approved(self):
         query = """
@@ -59,32 +56,11 @@ class Rubber(commands.Cog):
         """
         return [user['id'] for user in await self.bot.pool.fetch(query)]
 
-    # @commands.command()
-    # async def rtest(self, ctx):
-    #     con = self.bot.pool
-    #     query = """SELECT * FROM rubber;"""
-    #     print(await con.fetch(query))
-
     @commands.group()
     async def rubber(self, ctx):
         pass
 
-    # @rubber.command()
-    # async def view(self, ctx):
-    #     con = self.bot.pool
-    #     query = """SELECT * FROM rubber;"""
-    #     print(await con.fetch(query))
-    
-    # @rubber.command()
-    # async def viewall(self, ctx):
-    #     con = self.bot.pool
-    #     query = """SELECT id, link, type, rarity FROM rubber;"""
-    #     all_flips = await con.fetch(query)
-    #     for flip in all_flips:
-    #         await ctx.send(f'{flip["type"]} - rarity: {flip["rarity"]},id: {flip["id"]}\n{flip["link"]}')
-    #         await sleep(2)
-
-    async def _generate_flip_result_embed(self, ctx, flip_type, credit):
+    async def _generate_flip_result_embed(self, flip_type):
         colour_map = {
             'yes': discord.Colour.green,
             'maybe': discord.Colour.yellow,
@@ -99,7 +75,7 @@ class Rubber(commands.Cog):
         if not self.flip_approved:
             self.flip_approved = await self.fetch_flip_approved()
         if ctx.author.id not in self.flip_approved: #Handle the non flip approved
-            await ctx.reply('Sorry, you must submit a flip video to use this command!', delete_after=20)
+            await ctx.reply(f"{self.bot.config['emojis']['error']} Sorry, you must submit a flip video to use this command!", allowed_mentions=discord.AllowedMentions.none())
             return
         
         con = self.bot.pool
@@ -150,7 +126,7 @@ class Rubber(commands.Cog):
         flip_message = await ctx.reply(flip["link"], view=view, allowed_mentions=discord.AllowedMentions.none())
         # Wait for the View to stop listening for input...
         await view.wait()
-        await flip_message.edit(content='Landed on ⤦', embed=await self._generate_flip_result_embed(ctx, flip_type, flip["credit"]), view=None, allowed_mentions=discord.AllowedMentions.none())
+        await flip_message.edit(content='Landed on ⤦', embed=await self._generate_flip_result_embed(flip_type), view=None, allowed_mentions=discord.AllowedMentions.none())
 
 
     async def _check_vaild_data(self, thing, possible_things):
@@ -160,39 +136,54 @@ class Rubber(commands.Cog):
         else:
             return possible_thing[0]
 
-    # @rubber.command()
-    # async def add(self, ctx, link=None, flip_type=None, rarity='common', credit=None):
-    #     rarities = ('common', 'uncommon', 'rare', 'legendary')
-    #     flip_types = ('yes', 'no', 'maybe')
+    @commands.is_owner()
+    @rubber.command()
+    async def add(self, ctx: commands.Context, link: str, flip_type: str, rarity: str = 'common', credit: int = None):
+        rarities = ('common', 'uncommon', 'rare', 'legendary')
+        flip_types = ('yes', 'no', 'maybe')
 
-    #     if link == None or flip_type == None:
-    #         await ctx.send(f'A **{"link" if link == None else "flip_type"}** must be provided - `link flip_type rarity credit`')
+        if flip_type not in flip_types:
+            flip_type = await self._check_vaild_data(flip_type, flip_types)
+            if not flip_type:
+                await ctx.reply('That is not a valid flip_type!', allowed_mentions=discord.AllowedMentions.none())
+                return
 
-    #     else:
-    #         if flip_type not in flip_types:
-    #             flip_type = await self._check_vaild_data(flip_type, flip_types)
-    #             if not flip_type:
-    #                 await ctx.send('That is not a valid flip_type!')
-    #                 return
+        if rarity not in rarities:
+            rarity = await self._check_vaild_data(rarity, rarities)
+            if not rarity:
+                await ctx.reply('That is not a valid rarity!', allowed_mentions=discord.AllowedMentions.none())
+                return
 
-    #         # if rarity not in rarities:
-    #         #     rarity = await self._check_vaild_data(rarity, rarities)
-    #         #     if not rarity:
-    #         #         await ctx.send('That is not a valid rarity!')
-    #         #         return
+        rarity = rarities.index(rarity)
 
-    #         if not link.startswith('https://'):
-    #             if link.startswith('!v$'):
-    #                 link = link[3:]
-    #             else:
-    #                 await ctx.send('That looks like an invalid link :thinking: - If you\'re sure it\'s valid prepend **!v$** (eg. `!v$https://`)')
-    #                 return
-            
-    #         con = self.bot.pool
-    #         query = """INSERT INTO rubber (link, type, rarity, credit)
-    #                     VALUES ($1, $2, $3, $4)
-    #                     ON CONFLICT link DO NOTHING;"""
-    #         await con.execute(query, link, flip_type, int(rarity), int(credit))
+        if not link.startswith('https://'):
+            if link.startswith('!v$'):
+                link = link[3:]
+            else:
+                await ctx.reply('That looks like an invalid link :thinking: - If you\'re sure it\'s valid prepend **!v$** (eg. `!v$https://`)', allowed_mentions=discord.AllowedMentions.none())
+                return
+        
+        con = self.bot.pool
+        query = """INSERT INTO rubber (link, type, rarity, credit)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (link) DO NOTHING;"""
+        await con.execute(query, link, flip_type, rarity, credit)
+
+        # Refresh approved to reflect changes
+        self.flip_approved = await self.fetch_flip_approved()
+
+        potential_credit = self.bot.get_user(credit)
+        await ctx.reply(f"Added flip to the Database! (If not duplicate) [{f'credited: `{potential_credit}`]' if potential_credit else ''}", allowed_mentions=discord.AllowedMentions.none())
+
+    @add.error
+    async def rubber_add_handler(self, ctx, error):
+        """
+        A local Error Handler, only listens for errors in rubber add
+        The global on_command_error will still be invoked after.
+        """
+        if isinstance(error, commands.MissingRequiredArgument):
+            ctx.error_message = 'You must provide a **link** and **flip_type**'
+            ctx.error_add_usage = True
 
 def setup(bot):
     bot.add_cog(Rubber(bot))
