@@ -36,7 +36,7 @@ class WordCloud(commands.Cog):
             words = Counter()
             
             async for message in ctx.channel.history(limit=limit):
-                words.update(current_cloud.process_text(message.clean_content))
+                words.update(current_cloud.process_text(message.clean_content.lower()))
 
             current_cloud.fit_words(dict(words))
             image = current_cloud.to_image()
