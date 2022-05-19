@@ -1,28 +1,30 @@
 from dotenv import load_dotenv
 load_dotenv()
-import discord
+
+from cogs.utils.context import Context
 from discord.ext import commands
 from os import getenv
 import traceback
-import sys
-# from asyncio import sleep
+import discord
 import asyncpg
+import sys
+
 # from cogs.utils.cache import GuildInfo
 
 extensions = (
-    'cogs.owner',
-    'cogs.error_handler',
     'cogs.admin',
-    'cogs.tools',
-    'cogs.starboard',
-    'cogs.poofboard',
-    'cogs.summary',
     'cogs.auto',
-    'cogs.minecraft',
+    'cogs.error_handler',
+    'cogs.owner',
+    'cogs.poofboard',
+    'cogs.public',
     'cogs.rubber',
-    'cogs.public')
-# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.fix')
-# keys = ('GOOGLEAPI_KEY')
+    'cogs.starboard',
+    'cogs.summary',
+    'cogs.tools',
+    'cogs.trolling',
+    'cogs.wordcloud')
+# extensions = ('cogs.owner', 'cogs.error_handler', 'cogs.wordcloud')
 
 class NOMUtils(commands.Bot):
     def __init__(self):
@@ -60,25 +62,17 @@ class NOMUtils(commands.Bot):
     #     if str(guild_id) not in self.cache:
     #         self.cache[str(guild_id)] = GuildInfo(guild_id, pool)
 
-    # def load_keys(self):
-    #     for key in keys:
-    #         self.config['keys'][key] = getenv(key)
+    # Replace default context with my custom one
+    async def get_context(self, message, *, cls=Context):
+        return await super().get_context(message, cls=cls)
 
 bot = NOMUtils()
-bot.remove_command('help')
 
 @bot.event
 async def on_ready():
     print('NOMUtils is ready.')
-    # await sleep(3)
-    # await bot.change_presence(status=discord.Status.invisible)
 
-debug_mode = False #wether or not to connect to the db (True means dont connect)
-token = getenv('BOT_TOKEN')
-db_username = getenv('DB_USERNAME')
-db_pass = getenv('DB_PASS')
-db_name = getenv('DB_NAME')
-db_host = getenv('DB_HOST')
+debug_mode = False #whether or not to connect to the db (True means dont connect)
 if __name__ == '__main__':
     for extension in extensions:
         try:
@@ -89,9 +83,9 @@ if __name__ == '__main__':
     try:
         # NOTE: 127.0.0.1 is the loopback address. If db is running on the same machine as the code, this address will work
         if not debug_mode:
-            credentials = {"user": db_username, "password": db_pass, "database": db_name, "host": db_host}
+            credentials = {"user": getenv('DB_USERNAME'), "password": getenv('DB_PASS'), "database": getenv('DB_NAME'), "host": getenv('DB_HOST')}
             bot.pool = bot.loop.run_until_complete(asyncpg.create_pool(**credentials))
-        bot.loop.run_until_complete(bot.start(token))
+        bot.loop.run_until_complete(bot.start(getenv('BOT_TOKEN')))
     except KeyboardInterrupt:
         # cancel all tasks lingering
         if not debug_mode:

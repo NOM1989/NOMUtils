@@ -7,14 +7,14 @@ https://gist.github.com/EvieePy/d78c061a4798ae81be9825468fe146be
 For a list of exceptions:
 https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#exceptions
 """
-import discord
-import traceback
-import sys
-from discord.ext import commands
-import datetime
-from asyncio import sleep
 from random import choice, randint
+from discord.ext import commands
 from inspect import Parameter
+from asyncio import sleep
+import traceback
+import datetime
+import discord
+import sys
 
 class CommandErrorHandler(commands.Cog):
     def __init__(self, bot):
@@ -80,7 +80,7 @@ class CommandErrorHandler(commands.Cog):
         # Anything in ignored will return and prevent anything happening.
         if isinstance(error, ignored):
             return
-        
+
         elif isinstance(error, commands.MissingRequiredArgument):
             await self.send_error(ctx)
             # text = f"{error_base}{self.add_extra(ctx)}{self.add_usage(ctx)}"
