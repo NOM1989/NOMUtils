@@ -177,6 +177,18 @@ class Tools(commands.Cog):
         await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
 
     @commands.guild_only()
+    @commands.command(hidden=True)
+    async def url_say(self, ctx, username: str, avatar_url: str, *, text=None):
+        """fill in"""
+        await ctx.message.delete()
+        files = []
+        if ctx.message.attachments:
+            for attachment in ctx.message.attachments:
+                files.append(await attachment.to_file())
+        webhook = await get_webook(self.bot, ctx.channel)
+        await webhook.send(content=text if text != None else '', username=username, avatar_url=avatar_url, files=files)
+
+    @commands.guild_only()
     @commands.command(aliases=['massudo', 'masssudo'], enabled=False)
     async def mass_sudo(self, ctx, *options):
         """Impersonate users in the server to say something"""
