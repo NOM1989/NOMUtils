@@ -23,8 +23,8 @@ class WordCloud(commands.Cog):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command(aliases=['wc'])
-    async def wordcloud(self, ctx: Context, limit: int | str = 500, use_mask: bool = False):
-        if isinstance(limit, str) and limit.lower() == 'none':
+    async def wordcloud(self, ctx: Context, limit: int = 500, use_mask: bool = True):
+        if limit == 0:
             limit = None
 
         async with ctx.typing():
