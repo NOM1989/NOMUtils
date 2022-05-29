@@ -29,7 +29,7 @@ class ChauBlock(commands.Cog):
         self.TMP_UNBLOCK_TIME = 30 # Seconds
 
         # List of users who post ads
-        self.ad_posters: list[int] = [421362214558105611]
+        self.ad_posters: list[int] = [441365064503656479]
         # Protected Guils (guilds to block ads on)
         self.ad_guilds: list[int] = [593542699081269248]
 
