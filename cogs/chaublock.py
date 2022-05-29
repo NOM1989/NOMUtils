@@ -13,7 +13,7 @@ class ChauBlockUser():
         self.tier: int = res['tier']
 
 class BlockedMessage():
-    def __init__(self, res: dict[str, any]) -> None:
+    def __init__(self, res) -> None:
         self.channel_id: int = res['channel_id']
         self.active_message_id: int = res['active_message_id']
         self.origional_attachment_url: str = res['origional_attachment_url']
