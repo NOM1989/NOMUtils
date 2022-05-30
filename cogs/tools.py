@@ -1,6 +1,7 @@
 from cogs.utils.utils import read_data, write_data, get_webook
 from discord.ext import tasks, commands
 from asyncio import sleep, TimeoutError
+from .utils.context import Context
 from random import choice, randint
 from datetime import timedelta
 from bot import NOMUtils
@@ -164,17 +165,17 @@ class Tools(commands.Cog):
                 await ctx.send(to_send, files=files)
         await ctx.send('`Complete!`')
 
-    @commands.guild_only()
-    @commands.command(hidden=True)
-    async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
-        """Impersonate a user (must share a server with this bot)"""
-        await ctx.message.delete()
-        files = []
-        if ctx.message.attachments:
-            for attachment in ctx.message.attachments:
-                files.append(await attachment.to_file())
-        webhook = await get_webook(self.bot, ctx.channel)
-        await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
+    # @commands.guild_only()
+    # @commands.command(hidden=True)
+    # async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
+    #     """Impersonate a user (must share a server with this bot)"""
+    #     await ctx.message.delete()
+    #     files = []
+    #     if ctx.message.attachments:
+    #         for attachment in ctx.message.attachments:
+    #             files.append(await attachment.to_file())
+    #     webhook = await get_webook(self.bot, ctx.channel)
+    #     await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
 
     @commands.guild_only()
     @commands.command(hidden=True)
@@ -669,6 +670,14 @@ class Tools(commands.Cog):
     #                 files.append(await attachment.to_file())
     #         await webhook.send(content=message.content if message.content != None else '', username=message.author.display_name, avatar_url=message.author.display_avatar.url, files=files)
     #         await sleep(self.sleep_time)
+
+    @commands.command()
+    async def nick(self, ctx: Context, nickname: str = None, member: discord.Member = None):
+        if nickname == None:
+            nickname = None
+        if member == None:
+            member = ctx.guild.me
+        await member.edit(nick=nickname)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
