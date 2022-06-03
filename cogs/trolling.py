@@ -5,7 +5,8 @@ import discord
 class Trolling(commands.Cog):
     def __init__(self, bot):
         self.bot: NOMUtils = bot
-        self.ignored_guild_ids: list[int] = [749665566884757566]
+        self.exempt_guilds: list[int] = [749665566884757566]
+        self.exempt_members: list[int] = [405764666531381248]
         self.tmp_name_store: dict[int, str] = {}
 
         self.NO_VIEWERS_NAME: str = 'no viewers?'
@@ -16,7 +17,7 @@ class Trolling(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_channel_create(self, channel: discord.TextChannel):
         """Sends 'first' in a newly created channel"""
-        if channel.guild.id not in self.ignored_guild_ids and isinstance(channel, discord.TextChannel):
+        if channel.guild.id not in self.exempt_guilds and isinstance(channel, discord.TextChannel):
             await channel.send('first')
 
     async def _set_nickname(self, member: discord.Member, overwrite=False):
@@ -43,7 +44,7 @@ class Trolling(commands.Cog):
     @commands.Cog.listener()
     async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceState, after: discord.VoiceState):
         """Sets a user's name to self.NO_VIEWERS_NAME if no one is watching their stream"""
-        if member.guild.id not in self.ignored_guild_ids:
+        if member.guild.id not in self.exempt_guilds and member.id not in self.exempt_members:
             # print('Voice state update! - ', member, before.channel, after.channel, len(getattr(after.channel, 'members', [])))
             # print(member.name, len(after.channel.members) > 1)
 
