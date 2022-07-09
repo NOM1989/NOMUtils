@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 import re
+from random import choice, randint
 
 rog_server_id = 593542699081269248
 
@@ -16,9 +17,16 @@ class Auto(commands.Cog):
     #     if message.guild and message.guild.id == rog_server_id and not message.author.bot:
     #         content = message.content.lower()
     #         # spaces_count = content.count(' ')
-    #         # matched_int_ranges = re.search(r"(?:^|[^\d])(\d{1,3}-\d{1,3})(?:[^\d]|$)|(?:[^\d-](\d{1,3}(?:,[\d]{1,3})+))") #Maths teacher shenanegans
-            
+    #         matched_int_ranges = re.search(r"(?:^|[^\d])(\d{1,3}-\d{1,3})(?:[^\d]|$)|(?:[^\d-](\d{1,3}(?:,[\d]{1,3})+))") #Maths teacher shenanegans
+    #         choice(matched_int_ranges)
+
+
+
     async def _on_delete_handler(self, message):
+        """
+        Called when a message is deleted, checks if the message contained a role mention if so sends a callout message.
+        If callout msg is deleted it is resent.
+        """
         if message.id in self.callouts:
             sent = await message.channel.send(self.callouts[message.id], allowed_mentions=no_mentions)
             self.callouts[sent.id] = str(self.callouts[message.id])
@@ -27,7 +35,7 @@ class Auto(commands.Cog):
             content = message.content.lower()
             possible_role_mentions = re.findall(r"<@&\d{18}>", content)
             if possible_role_mentions:
-                string_to_send = f"{message.author.mention} mentioned: {', '.join(possible_role_mentions)}"
+                string_to_send = f"{message.author.mention} mentioned: {', '.join(possible_role_mentions)}" #Would try and say who deleted it but you have to search throught he audit log and its not worth it
                 sent = await message.channel.send(string_to_send, allowed_mentions=no_mentions)
                 self.callouts[sent.id] = string_to_send
 

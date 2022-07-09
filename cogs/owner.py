@@ -1,6 +1,8 @@
 from discord.ext import commands
 from time import time
 
+# To do: https://github.com/Rapptz/RoboDanny/blob/f37e3b536fec0c5b70954c0be6850027010b77d5/cogs/admin.py#L180
+
 class Owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot

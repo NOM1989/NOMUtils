@@ -3,7 +3,7 @@ import discord
 
 from random import choice
 
-class Covid(commands.Cog):
+class RIP(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -37,4 +37,4 @@ class Covid(commands.Cog):
 
 
 def setup(bot):
-    bot.add_cog(Covid(bot))
+    bot.add_cog(RIP(bot))

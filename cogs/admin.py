@@ -15,6 +15,7 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.last_clear = 0
+        self.green_emoji = self.bot.config['emojis']['green']
 
     # async def cog_check(self, ctx):
     #     return await self.bot.is_owner(ctx.author)
@@ -46,9 +47,7 @@ class Admin(commands.Cog):
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['del'])
     async def delete(self, ctx, m_from: discord.Message, m_to: discord.Message):
-        '''
-        Deletes messages within the 2 given messages
-        '''
+        '''Deletes messages within the 2 given messages'''
         await ctx.message.delete()
         deleted = await ctx.channel.purge(limit=100, before=m_to, after=m_from)
         await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
@@ -125,6 +124,22 @@ class Admin(commands.Cog):
         await ctx.send('\n'.join(removed_messages), delete_after=10)
         await sleep(10)
         await ctx.message.delete()
+
+    # @commands.is_owner()
+    # @commands.command(hidden=True, aliases=['antispam', 'anti_spam', 'remove_spam'])
+    # async def removespam(self, ctx, *, target_m: discord.Message):
+    #     """Clears all instances of a specified message from the mesages author in the last week"""
+    #     sleep_time = 0.5
+    #     reply = await ctx.reply(f'<a:typing:931524283065319446>  Scanning **{len(ctx.guild.text_channels)}** channels `max eta: {len(ctx.guild.text_channels)*sleep_time} sec`', allowed_mentions = discord.AllowedMentions.none())
+    #     deleted = 0
+    #     for text_channel in ctx.guild.text_channels:
+    #         last_msg = text_channel.last_message
+    #         if last_msg:
+    #             if last_msg.author == target_m.author and last_msg.content == target_m.content:
+    #                 await last_msg.delete()
+    #                 deleted += 1
+    #                 await sleep(sleep_time)
+    #     await reply.edit(f'{self.green_emoji} Deleted **{deleted}** message(s) `[in {deleted} channels]`', allowed_mentions = discord.AllowedMentions.none())
 
 def setup(bot):
     bot.add_cog(Admin(bot))
