@@ -165,17 +165,17 @@ class Tools(commands.Cog):
                 await ctx.send(to_send, files=files)
         await ctx.send('`Complete!`')
 
-    # @commands.guild_only()
-    # @commands.command(hidden=True)
-    # async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
-    #     """Impersonate a user (must share a server with this bot)"""
-    #     await ctx.message.delete()
-    #     files = []
-    #     if ctx.message.attachments:
-    #         for attachment in ctx.message.attachments:
-    #             files.append(await attachment.to_file())
-    #     webhook = await get_webook(self.bot, ctx.channel)
-    #     await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
+    @commands.guild_only()
+    @commands.command(hidden=True)
+    async def sudo(self, ctx, who: Union[discord.Member, discord.User], *, text=None):
+        """Impersonate a user (must share a server with this bot)"""
+        await ctx.message.delete()
+        files = []
+        if ctx.message.attachments:
+            for attachment in ctx.message.attachments:
+                files.append(await attachment.to_file())
+        webhook = await get_webook(self.bot, ctx.channel)
+        await webhook.send(content=text if text != None else '', username=who.display_name, avatar_url=who.display_avatar.url, files=files)
 
     @commands.guild_only()
     @commands.command(hidden=True)
