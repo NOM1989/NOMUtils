@@ -76,7 +76,7 @@ class ChauBlock(commands.Cog):
             ).filter(ImageFilter.BLUR).filter(ImageFilter.BLUR) # Blur image
 
         chaublock_width = img.width*.65
-        chaublock = Image.open('chaublock.png')
+        chaublock = Image.open('resources/chaublock.png')
         chaublock = chaublock.resize(
             (
                 round(chaublock_width), 
