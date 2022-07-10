@@ -1,11 +1,13 @@
+from .utils.context import Context
 from discord.ext import commands
-from time import time
+from bot import NOMUtils
+import discord
 
 # To do: https://github.com/Rapptz/RoboDanny/blob/f37e3b536fec0c5b70954c0be6850027010b77d5/cogs/admin.py#L180
 
 class Owner(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: NOMUtils = bot
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -66,6 +68,12 @@ class Owner(commands.Cog):
                 await ctx.send(f'\N{OK HAND SIGN} `Reloaded: {module}`')
         else:
             await ctx.send(f'\N{OK HAND SIGN} `Reloaded: {module}`')
+
+    @commands.command()
+    async def cogs(self, ctx: Context):
+        """Lists all loaded cogs"""
+        embed = discord.Embed(title='Loaded Cogs', description=' :gear: ' + '\n :gear: '.join(self.bot.extensions))
+        await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(aliases=['fuckoff'])
     async def leave(self, ctx):
