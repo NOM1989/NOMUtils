@@ -15,7 +15,7 @@ class WordCloud(commands.Cog):
         
     def create_array(self):
         # load the image and convert into numpy array
-        img = Image.open('ERS_mask.png')
+        img = Image.open('resources/ERS_mask.png')
         # asarray() class is used to convert PIL images into NumPy arrays
         return asarray(img)
 
@@ -40,7 +40,7 @@ class WordCloud(commands.Cog):
                 words.update(current_cloud.process_text(message.clean_content.lower()))
                 msg_count += 1
 
-            filename = 'resources/wordcloud.png'
+            filename = 'wordcloud.png'
             embed = discord.Embed(colour=0x2F3136)
             embed.set_image(url=f'attachment://{filename}')
 
