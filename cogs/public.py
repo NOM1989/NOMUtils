@@ -1,11 +1,12 @@
-from discord.ext import commands
-import discord
-from asyncio import TimeoutError
-from typing import Union
+from asyncio import TimeoutError, sleep
 from difflib import get_close_matches
+from .utils.context import Context
+from discord.ext import commands
 from datetime import datetime
 from random import choice
+from typing import Union
 from io import BytesIO
+import discord
 
 class Public(commands.Cog):
     def __init__(self, bot):
@@ -172,6 +173,27 @@ class Public(commands.Cog):
                     await ctx.send(choice(day_specials[day_today]) if day_today in day_specials else 'yes')
                 else:
                     await ctx.send('no')
+
+    @commands.command()
+    async def search(self, ctx: Context, *, name_or_tag: str):
+        # In the future make use of a channel tagging system (DB) to allow for custom tags on channels or use the channel description
+        """Enter a possible channel name and the bot will provide a jump link to it if you have the appropriate permissions"""
+        to_delete = [ctx.message]
+        possible_channel = get_close_matches(name_or_tag, [getattr(channel, 'name') for channel in ctx.guild.text_channels], n=1)
+        if possible_channel:
+            channel = discord.utils.get(ctx.guild.text_channels, name=possible_channel[0])
+            perms: discord.Permissions = channel.permissions_for(ctx.message.author)
+            if perms.read_messages:
+                to_delete.append(await ctx.reply(channel.mention, allowed_mentions=discord.AllowedMentions.none()))
+        if len(to_delete) == 1:
+            await ctx.message.add_reaction('🚫')
+            # await ctx.reply('Sorry, that channel doesnt exist or you cannot view it', allowed_mentions=discord.AllowedMentions.none())
+        
+        await sleep(5)
+        try:
+            await ctx.message.channel.delete_messages(to_delete)
+        except discord.Forbidden:
+            pass
 
 def setup(bot):
     bot.add_cog(Public(bot))
