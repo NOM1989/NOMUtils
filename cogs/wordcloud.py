@@ -55,8 +55,8 @@ class WordCloud(commands.Cog):
                     pass #Secret way to cancel (deleting the invocation message)
 
             
-def setup(bot):
-    bot.add_cog(WordCloud(bot))
+async def setup(bot):
+    await bot.add_cog(WordCloud(bot))
 
 
 ############
