@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 from time import time
-
+from .utils.context import Context
 from asyncio import sleep
 from collections import Counter
 import re
@@ -23,7 +23,7 @@ class Admin(commands.Cog):
 
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['purge'])
-    async def clear(self, ctx, *, amount: int):
+    async def clear(self, ctx: Context, *, amount: int):
         """Clears the specified amount of messages"""
         # del_message_list = ctx.channel.purge(limit=amount) #If you want to get the messages deleted
         await ctx.message.delete()
@@ -32,13 +32,13 @@ class Admin(commands.Cog):
                 await ctx.channel.purge(limit=amount, before=ctx.message)
                 self.last_clear = round(time(), 6)
             else:
-                await ctx.send('Cleared within 2 seconds, assuming message repeted due to connection issues.', delete_after=8.0)
+                await ctx.send('Cleared within 2 seconds, assuming message repeated due to connection issues.', delete_after=8.0)
         else:
             await ctx.send('Amount > 100, assuming typo.', delete_after=8.0)
     
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['mpurge'])
-    async def mclear(self, ctx, *, target_m: discord.Message):
+    async def mclear(self, ctx: Context, *, target_m: discord.Message):
         """Clears up to a specified message"""
         deleted = await ctx.channel.purge(limit=100, after=target_m)
         await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
@@ -46,7 +46,7 @@ class Admin(commands.Cog):
     #Delete messages between certain messages
     @commands.is_owner()
     @commands.command(hidden=True, aliases=['del'])
-    async def delete(self, ctx, m_from: discord.Message, m_to: discord.Message):
+    async def delete(self, ctx: Context, m_from: discord.Message, m_to: discord.Message):
         '''Deletes messages within the 2 given messages'''
         await ctx.message.delete()
         deleted = await ctx.channel.purge(limit=100, before=m_to, after=m_from)
@@ -83,18 +83,19 @@ class Admin(commands.Cog):
         return Counter(message.author.display_name for message in deleted_messages)
 
     #Add a check here if the server is rog, allow council else: owner only
+    @staticmethod
     def rog_check(ctx):
         to_return = False
         if ctx.author.id == owner_id:
             to_return = True
         elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
-            # utils.get(message.author.roles, name="Nitro Booster") - A better way? Maybe impliment later
+            # utils.get(message.author.roles, name="Nitro Booster") - A better way? Maybe implement later
             to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
         return to_return
 
     @commands.command(aliases=['clean'])
     @commands.check(rog_check)
-    async def cleanup(self, ctx, search=60):
+    async def cleanup(self, ctx: Context, search=60):
         '''
         Cleans up bot and invocation messages in a channel.
 
@@ -111,7 +112,7 @@ class Admin(commands.Cog):
         removed_messages = [f"{deleted_count} message{'' if deleted_count == 1 else 's'} cleaned up."]
         if deleted_count: #If any messages were deleted display who's they were
             removed_messages.append('') #Adds a break when we later join them
-            #The following lambda function (lambda x: x[1]) is equivilent to:
+            #The following lambda function (lambda x: x[1]) is equivalent to:
             '''
             def func_name(x):
                 return x[1]
@@ -141,5 +142,5 @@ class Admin(commands.Cog):
     #                 await sleep(sleep_time)
     #     await reply.edit(f'{self.green_emoji} Deleted **{deleted}** message(s) `[in {deleted} channels]`', allowed_mentions = discord.AllowedMentions.none())
 
-def setup(bot):
-    bot.add_cog(Admin(bot))
+async def setup(bot):
+    await bot.add_cog(Admin(bot))
