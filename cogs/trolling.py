@@ -69,5 +69,5 @@ class Trolling(commands.Cog):
                 await self._set_nickname(member, overwrite=True) #no views
 
 
-def setup(bot):
-    bot.add_cog(Trolling(bot))
+async def setup(bot):
+    await bot.add_cog(Trolling(bot))
