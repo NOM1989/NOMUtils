@@ -137,6 +137,11 @@ class CommandErrorHandler(commands.Cog):
         #     if ctx.command.qualified_name == 'tag list':  # Check if the command being invoked is 'tag list'
         #         await ctx.send('I could not find that member. Please try again.')
 
+
+        # Don't display errors with a message in the console, just send in discord
+        elif ctx.error_message:
+            await self.send_error(ctx)
+
         else:
             # All other Errors not returned come here. And we can just print the default TraceBack.
             print(

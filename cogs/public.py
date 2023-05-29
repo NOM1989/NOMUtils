@@ -80,22 +80,6 @@ class Public(commands.Cog):
             except discord.Forbidden:
                 pass
 
-    # No longer necessary as made avatar use the author if not provided 
-    # @avatar.error
-    # async def avatar_handler(self, ctx, error):
-    #     """
-    #     A local Error Handler, only listens for errors in avatar
-    #     The global on_command_error will still be invoked after.
-    #     """
-    #     error_message = f' - `{ctx.prefix}{ctx.invoked_with} <user>`'
-    #     # Check if our required argument is missing
-    #     if isinstance(error, commands.MissingRequiredArgument):
-    #         if error.param.name == 'who':
-    #             await ctx.reply(f"{self.bot.config['emojis']['error']} You must specify a **user**{error_message}", allowed_mentions=discord.AllowedMentions.none())
-    #             ctx.error_handled = True
-    #     else:
-    #         ctx.error_message = error_message
-
     @commands.command(aliases=['guild_emojis'])
     @commands.has_guild_permissions(manage_messages=True)
     async def emojis(self, ctx):
@@ -195,5 +179,5 @@ class Public(commands.Cog):
         except discord.Forbidden:
             pass
 
-def setup(bot):
-    bot.add_cog(Public(bot))
+async def setup(bot):
+    await bot.add_cog(Public(bot))
