@@ -17,11 +17,10 @@ class Admin(commands.Cog):
         self.last_clear = 0
         self.green_emoji = self.bot.config['emojis']['green']
 
-    # async def cog_check(self, ctx):
-    #     return await self.bot.is_owner(ctx.author)
-    #     # return not ctx.author.bot
+    async def cog_check(self, ctx):
+        return await self.bot.is_owner(ctx.author)
+        # return not ctx.author.bot
 
-    @commands.is_owner()
     @commands.command(hidden=True, aliases=['purge'])
     async def clear(self, ctx: Context, *, amount: int):
         """Clears the specified amount of messages"""
@@ -36,7 +35,6 @@ class Admin(commands.Cog):
         else:
             await ctx.send('Amount > 100, assuming typo.', delete_after=8.0)
     
-    @commands.is_owner()
     @commands.command(hidden=True, aliases=['mpurge'])
     async def mclear(self, ctx: Context, *, target_m: discord.Message):
         """Clears up to a specified message"""
@@ -44,7 +42,6 @@ class Admin(commands.Cog):
         await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
 
     #Delete messages between certain messages
-    @commands.is_owner()
     @commands.command(hidden=True, aliases=['del'])
     async def delete(self, ctx: Context, m_from: discord.Message, m_to: discord.Message):
         '''Deletes messages within the 2 given messages'''
@@ -82,19 +79,19 @@ class Admin(commands.Cog):
         deleted_messages = await ctx.channel.purge(limit=search, check=check_bot, before=ctx.message)
         return Counter(message.author.display_name for message in deleted_messages)
 
-    #Add a check here if the server is rog, allow council else: owner only
-    @staticmethod
-    def rog_check(ctx):
-        to_return = False
-        if ctx.author.id == owner_id:
-            to_return = True
-        elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
-            # utils.get(message.author.roles, name="Nitro Booster") - A better way? Maybe implement later
-            to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
-        return to_return
+    # #Add a check here if the server is rog, allow council else: owner only
+    # @staticmethod
+    # def rog_check(ctx):
+    #     to_return = False
+    #     if ctx.author.id == owner_id:
+    #         to_return = True
+    #     elif ctx.guild and ctx.guild.id == rog_server_id: #ROG
+    #         # utils.get(message.author.roles, name="Nitro Booster") - A better way? Maybe implement later
+    #         to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
+    #     return to_return
 
     @commands.command(aliases=['clean'])
-    @commands.check(rog_check)
+    # @commands.check(rog_check)
     async def cleanup(self, ctx: Context, search=60):
         '''
         Cleans up bot and invocation messages in a channel.
@@ -141,6 +138,22 @@ class Admin(commands.Cog):
     #                 deleted += 1
     #                 await sleep(sleep_time)
     #     await reply.edit(f'{self.green_emoji} Deleted **{deleted}** message(s) `[in {deleted} channels]`', allowed_mentions = discord.AllowedMentions.none())
+
+    @commands.command()
+    async def nick(self, ctx: Context, who: discord.Member, *, nickname: str = None):
+        if nickname == None:
+            nickname = None
+        await who.edit(nick=nickname)
+
+    @nick.error
+    async def nick_handler(self, ctx, error):
+        """
+        A local Error Handler, only listens for errors in nick
+        The global on_command_error will still be invoked after.
+        """
+        if isinstance(error, commands.MissingRequiredArgument):
+            ctx.error_message = 'You must provide a member'
+            ctx.error_add_usage = True
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
