@@ -173,7 +173,7 @@ class CommandErrorHandler(commands.Cog):
             flair = f"{choice(error_flairs)}, a" if randint(0, 1) else "A"
             await self.send_error(
                 ctx,
-                default_text=f"{flair}n error occured: `{error.__class__.__name__}: {error}`",
+                default_text=f"{flair}n error occurred: `{error.__class__.__name__}: {error}`",
             )
 
     """Below is an example of a Local Error Handler for our command do_repeat"""
