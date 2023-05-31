@@ -50,7 +50,7 @@ class NOMUtils(commands.Bot):
         self.config = {
             "emojis": {
                 "error": "<:ers_error:1113498344736694403>",
-                "green": "<:ers_check:1113497881991712809>",
+                "check": "<:ers_check:1113497881991712809>",
                 "question": "<:ers_question:1113497012025962507>",
             },
             "keys": {},

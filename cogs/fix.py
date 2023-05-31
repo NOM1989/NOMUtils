@@ -82,7 +82,7 @@ class Fix(commands.Cog):
                     await from_channel.delete(reason='April Fool!')
                 except:
                     extra = f"Could not {'copy perms/' if copy_perms else ''}delete: {from_channel.name}"
-                await msg.edit(embed=self.base_embed(f"{self.bot.config['emojis']['green']} Migrated to {to_channel.mention}", footer=extra))
+                await msg.edit(embed=self.base_embed(f"{self.bot.config['emojis']['check']} Migrated to {to_channel.mention}", footer=extra))
             try:
                 await msg.clear_reactions()
             except discord.errors.Forbidden:
