@@ -1,6 +1,7 @@
 from cogs.utils.context import Context
 from discord.ext import commands
 import traceback
+import asyncpg
 import discord
 import sys
 
@@ -20,8 +21,12 @@ import sys
 #     "cogs.trolling",
 #     "cogs.wordcloud",
 # )
-extensions = ("cogs.owner", "cogs.error_handler")
+extensions = (
+    "cogs.owner", 
+    "cogs.error_handler",
+)
 
+# wordcloud, admin, public, trolling, 
 
 class NOMUtils(commands.Bot):
     def __init__(self):
@@ -44,13 +49,14 @@ class NOMUtils(commands.Bot):
 
         self.config = {
             "emojis": {
-                "error": "<:error:938203108012605470>",
-                "green": "<:green:943119597144518676>",
+                "error": "<:ers_error:1113498344736694403>",
+                "green": "<:ers_check:1113497881991712809>",
+                "question": "<:ers_question:1113497012025962507>",
             },
             "keys": {},
         }
 
-        # self.pool: asyncpg.Pool = None
+        self.pool: asyncpg.Pool = None # type: ignore
 
         # self.cache: dict[int, GuildInfo] = {}
         # self.load_keys()

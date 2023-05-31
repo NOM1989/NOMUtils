@@ -37,10 +37,13 @@ class CommandErrorHandler(commands.Cog):
                     usage += f" [{param.name}]"
         return usage
 
-    async def send_error(self, ctx: Context, *, default_text: str = None):
+    async def send_error(self, ctx: Context, *, emoji: str = None, default_text: str = None):
         """Sends an error to the user with optional extra info"""
-        to_send = f"{self.bot.config['emojis']['error']} "
-        to_send += ctx.error_message or default_text
+        to_send = f"{self.bot.config['emojis'][emoji if emoji else 'error']} "
+        try:
+            to_send += ctx.error_message or default_text
+        except TypeError:
+            raise TypeError("WARNING: Bad usage of error handling, neither ctx.error_message or default_text was provided")
         # Add any additional error info I want displayed to ctx.error_message = error_message - see public.py for eg
         to_send += f" - `{self.get_cmd_usage(ctx)}`" if ctx.error_add_usage else ""
         await ctx.reply(to_send, allowed_mentions=discord.AllowedMentions.none())
@@ -86,17 +89,26 @@ class CommandErrorHandler(commands.Cog):
             return
 
         elif isinstance(error, commands.MissingRequiredArgument):
-            await self.send_error(ctx)
+            ctx.error_add_usage = True
+            await self.send_error(ctx, default_text="Invalid usage")
             # text = f"{error_base}{self.add_extra(ctx)}{self.add_usage(ctx)}"
             # await ctx.reply(text, allowed_mentions=discord.AllowedMentions.none())
             # await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
 
         elif (
-            isinstance(error, commands.BadUnionArgument) and error.param.name == "who"
+            isinstance(error, commands.BadUnionArgument) and error.param.name == "who" # When using a member/user union
         ):  # Used when converting to a discord member or user Object
             await self.send_error(
-                ctx, default_text="Sorry, I couldn't recognise that user"
+                ctx, emoji="question", default_text="Sorry, I couldn't recognise that user"
             )
+
+        elif (
+            isinstance(error, commands.MemberNotFound) # When converting to discord.member
+        ):
+            await self.send_error(
+                ctx, emoji="question", default_text="Sorry, I couldn't find that member"
+            )
+
 
         # I would put this in ignored but I will probably forget then not know why something isnt working
         elif isinstance(error, commands.CheckFailure):
