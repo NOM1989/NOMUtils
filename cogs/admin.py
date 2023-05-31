@@ -1,9 +1,9 @@
-from discord.ext import commands
-import discord
-from time import time
 from .utils.context import Context
-from asyncio import sleep
+from discord.ext import commands
 from collections import Counter
+from asyncio import sleep
+from time import time
+import discord
 import re
 
 
@@ -15,7 +15,6 @@ class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.last_clear = 0
-        self.green_emoji = self.bot.config['emojis']['green']
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -44,7 +43,7 @@ class Admin(commands.Cog):
     #Delete messages between certain messages
     @commands.command(hidden=True, aliases=['del'])
     async def delete(self, ctx: Context, m_from: discord.Message, m_to: discord.Message):
-        '''Deletes messages within the 2 given messages'''
+        '''Deletes messages with405764666531381248in the 2 given messages'''
         await ctx.message.delete()
         deleted = await ctx.channel.purge(limit=100, before=m_to, after=m_from)
         await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
@@ -137,13 +136,17 @@ class Admin(commands.Cog):
     #                 await last_msg.delete()
     #                 deleted += 1
     #                 await sleep(sleep_time)
-    #     await reply.edit(f'{self.green_emoji} Deleted **{deleted}** message(s) `[in {deleted} channels]`', allowed_mentions = discord.AllowedMentions.none())
+    #     await reply.edit(f"{self.bot.config['emojis']['check']} Deleted **{deleted}** message(s) `[in {deleted} channels]`", allowed_mentions = discord.AllowedMentions.none())
 
     @commands.command()
-    async def nick(self, ctx: Context, who: discord.Member, *, nickname: str = None):
+    async def nick(self, ctx: Context, member: discord.Member, *, nickname: str = None):
         if nickname == None:
             nickname = None
-        await who.edit(nick=nickname)
+        try:
+            await member.edit(nick=nickname)
+            await ctx.message.add_reaction(self.bot.config['emojis']['check'])
+        except discord.Forbidden:
+            await ctx.message.add_reaction(self.bot.config['emojis']['error'])
 
     @nick.error
     async def nick_handler(self, ctx, error):
@@ -154,6 +157,7 @@ class Admin(commands.Cog):
         if isinstance(error, commands.MissingRequiredArgument):
             ctx.error_message = 'You must provide a member'
             ctx.error_add_usage = True
+
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
