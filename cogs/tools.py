@@ -2,8 +2,7 @@ from cogs.utils.utils import read_data, write_data, get_webook
 from discord.ext import tasks, commands
 from asyncio import sleep, TimeoutError
 from .utils.context import Context
-from random import choice, randint
-from datetime import timedelta
+from random import choice, randint, random
 from bot import NOMUtils
 from typing import Union
 import discord
@@ -18,7 +17,6 @@ class Tools(commands.Cog):
         self.current_ctx = None
         self.current_vc_id = None
         self.inital_category = None
-        self.tmp_role_storage = {}
         self.tmp_channel_storage = {}
         self.sec_diff_for_msgs_to_count_as_batch = 8 # Default is 8 sec
         if 'sec_diff_for_msgs_to_count_as_batch' in options:
@@ -179,8 +177,8 @@ class Tools(commands.Cog):
 
     @commands.guild_only()
     @commands.command(hidden=True)
-    async def url_say(self, ctx, username: str, avatar_url: str, *, text=None):
-        """fill in"""
+    async def url_say(self, ctx, avatar_url: str, username: str, *, text=None):
+        """Custom (sudo) impersonation based on a url for the avatar icon."""
         await ctx.message.delete()
         files = []
         if ctx.message.attachments:
@@ -189,24 +187,9 @@ class Tools(commands.Cog):
         webhook = await get_webook(self.bot, ctx.channel)
         await webhook.send(content=text if text != None else '', username=username, avatar_url=avatar_url, files=files)
 
-    @commands.guild_only()
-    @commands.command(aliases=['massudo', 'masssudo'], enabled=False)
-    async def mass_sudo(self, ctx, *options):
-        """Impersonate users in the server to say something"""
-        reply_map = {
-            'yes': [
-                'yes',
-                'yeah',
-                'yah'
-            ]
-        }
-
-        await ctx.message.delete()
-        if len(options) == 1:
-            if options[0] in ('yes', 'no'):
-                options = reply_map[options[0]]
-
-        async def randomise(text):
+    def randomise_text(self, text):
+        """Randomises a simple string to be less generic"""
+        if text[0] != ':': # Not emojis
             if randint(1,3) == 1:
                 text = text.capitalize()
             else:
@@ -214,90 +197,91 @@ class Tools(commands.Cog):
                     text = text.upper()
             if randint(1,3) == 1:
                 text = text + text[-1]*randint(0,6)
-            return text
-
-        webhook = await self.get_webook(self.bot, ctx.channel)
-        for member in ctx.channel.members:
-            await webhook.send(content=await randomise(choice(options)), username=member.display_name, avatar_url=member.display_avatar.url)
-            await sleep(self.sleep_time)
+            if randint(1,3) == 1:
+                text = text + '!'*randint(0,3)
+        elif randint(0,2) == 1: # Emojis
+            text = text*randint(0,3)
+        return text
 
     @commands.guild_only()
-    @commands.command(aliases=['cleanwebhooks', 'remove_webhooks', 'removewebhooks'], enabled=False)
-    async def clean_webhooks(self, ctx):
+    @commands.command(aliases=['massudo', 'masssudo'])
+    async def mass_sudo(self, ctx, *options):
+        """Impersonate users in the server to say something"""
+        reply_map = {
+            'yes': [
+                'yes',
+                'yeah',
+                'yah',
+                ':thumbsup:',
+                'too true',
+                ':saluting_face:'
+            ],
+            'no': [
+                'no',
+                'nope',
+                'nah',
+                ':thumbsdown:',
+                ':man_gesturing_no:',
+                ':x:'
+            ]
+        }
+        chance = 1.0
+
+        await ctx.message.delete()
+        if len(options) > 0 and options[0] in ('yes', 'no'):
+            words = reply_map[options[0]]
+
+            if len(options) > 1:
+                try:
+                    chance = float(options[1])
+                except ValueError:
+                    chance = 0
+        
+            webhook = await get_webook(self.bot, ctx.channel)
+            for member in ctx.channel.members:
+                if random() <= chance:
+                    await webhook.send(content=self.randomise_text(choice(words)), username=member.display_name, avatar_url=member.display_avatar.url)
+                    await sleep(self.sleep_time)
+
+    @commands.guild_only()
+    @commands.command(aliases=['cleanwebhooks', 'cleanupwebhooks', 'remove_webhooks', 'removewebhooks'])
+    async def clean_webhooks(self, ctx: Context):
         """Cleans up sudo webhooks"""
+        await ctx.message.add_reaction(self.bot.my_emojis.typing)
         count = 0
-        for webhook in ctx.guild.webhooks():
+        for webhook in await ctx.guild.webhooks():
             if webhook.user == self.bot.user and webhook.name == 'ERS':
                 count += 1
                 await webhook.delete()
-        await ctx.reply(f'Cleaned up {count} sudo webhooks!' if count else 'No webhooks to clean up!', allowed_mentions=discord.AllowedMentions.none())
+        await ctx.message.remove_reaction(self.bot.my_emojis.typing, self.bot.user)
+        await ctx.reply(self.bot.my_emojis.check + (f" Cleaned up `{count} sudo` webhook(s)!" if count else ' No webhooks to clean up!'), allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(hidden=True, aliases=['remote_sudo'])
     async def rsudo(self, ctx, member_id: int, channel_id: int,  *, text):
-        """Remote sudo someone"""
-        print(type(channel_id))
-        channel = self.bot.get_channel(channel_id)
+        """Remote sudo someone in another channel"""
+        channel = self.bot.get_channel(channel_id) # Attempt a cache check
         if channel == None:
-            await ctx.send('Channel not found')
+            try:
+                channel = await self.bot.fetch_channel(channel_id) # API call if not
+            except discord.NotFound:
+                channel = None
+        if channel == None:
+            await ctx.reply(f"{self.bot.my_emojis.question} - Channel not found")
         else:
-            user = await self.bot.fetch_user(member_id)
+            user = self.bot.get_user(member_id)
             if user == None:
-                await ctx.send('User not found')
+                try:
+                    user = await self.bot.fetch_user(member_id)
+                except discord.NotFound:
+                    channel = None
+            if user == None:
+                await ctx.reply(f"{self.bot.my_emojis.question} - User not found")
             else:
-                # find_old_webhook() - Add a way to find and use old webhooks
-                webhook = await channel.create_webhook(name='DeletedUser')
-                await webhook.send(content=text, username=user.name, avatar_url=user.avatar_url)
-                await webhook.delete()
-
-    async def clear_user_roles(self, member):
-        origional_roles = list(member.roles)
-        replace_roles = []
-        for role in member.roles:
-            if len(replace_roles) < 1:
-                replace_roles.append(role)
-                break
-        try:
-            await member.edit(roles=replace_roles)
-            self.tmp_role_storage[str(member.id)] = origional_roles
-            return True
-        except discord.errors.Forbidden:
-            return False
-        
-    @commands.command(hidden=True, aliases=['troll'])
-    async def clear_roles(self, ctx, member: discord.Member):
-        """Clears the targest roles (temp stores them so they can be returned later)"""
-        if str(member.id) not in self.tmp_role_storage:
-            await self.clear_user_roles(member)
-            if ctx.invoked_with == 'poofers':
-                reply = 'Poof! :dash:'
-            else:
-                reply = 'When the roles are gone :flushed:'
-        else:
-            reply = 'Crisis averted :sunglasses:'
-        await ctx.send(reply)
-
-    async def replace_user_roles(self, member):
-        try:
-            await member.edit(roles=self.tmp_role_storage[str(member.id)])
-            del self.tmp_role_storage[str(member.id)]
-            return True
-        except discord.errors.Forbidden:
-            return False
-
-    @commands.command(hidden=True, aliases=['unpoof', 'return_roles', 'untroll'])
-    async def replace_roles(self, ctx, member: discord.Member):
-        """Restores cleared roles"""
-        if str(member.id) in self.tmp_role_storage:
-            await self.replace_user_roles(self, member)
-            reply = ':fingers_crossed:'
-        else:
-            reply = 'Nothing to replace! :grimacing:'
-            if ctx.guild.get_member(691299852352618620): #If soham is in the channel, blame him. (thats Soham Deshpande's id)
-                reply = reply + ' Blame Soham.'
-        await ctx.send(reply)
-
+                webhook = await get_webook(self.bot, channel)
+                await webhook.send(content=text, username=user.display_name, avatar_url=user.display_avatar.url)
+    
     @commands.command(hidden=True, aliases=['silencemedia'])
-    async def silence(self, ctx, *, since_number: int = None):
+    async def silence(self, ctx: Context, *, since_number: int = None):
         """Deletes messages starting with ? (bot prefix)"""
         if since_number == None:
             since_number = 60
@@ -313,7 +297,7 @@ class Tools(commands.Cog):
             await ctx.message.delete()
 
     @commands.command(hidden=True)
-    async def say(self, ctx, *, text):
+    async def say(self, ctx: Context, *, text):
         """Says what you tell it to"""
         try:
             await ctx.message.delete()
@@ -332,12 +316,11 @@ class Tools(commands.Cog):
         overwrite = channel.overwrites[role_or_member]
         if not overwrite.is_empty():
             for perm in overwrite:
-                if perm[0] in perms_list:
-                    if perm[1]:
-                        if perm[0] not in perms_map:
-                            perms_map[perm[0]] = []
-                        everyone_string = '`@everyone`'
-                        perms_map[perm[0]].append(f"{channel.mention}{f'-{role_or_member.mention if not role_or_member.is_default() else everyone_string}' if isinstance(role_or_member, discord.Role) else ''}")
+                if perm[0] in perms_list and perm[1]:
+                    if perm[0] not in perms_map:
+                        perms_map[perm[0]] = []
+                    everyone_string = '`@everyone`'
+                    perms_map[perm[0]].append(f"{channel.mention}{f'-{role_or_member.mention if not role_or_member.is_default() else everyone_string}' if isinstance(role_or_member, discord.Role) else ''}")
         return perms_map
 
     @commands.command(aliases=['power'])
@@ -350,11 +333,10 @@ class Tools(commands.Cog):
             perms_map = {}
             for role in member.roles:
                 for perm in role.permissions: #perm --> eg. ('send_messages_in_threads', True)
-                    if perm[0] in perms_list:
-                        if perm[1]:
-                            if perm[0] not in perms_map:
-                                perms_map[perm[0]] = []
-                            perms_map[perm[0]].append(role.mention if not role.is_default() else '`@everyone`')
+                    if perm[0] in perms_list and perm[1]:
+                        if perm[0] not in perms_map:
+                            perms_map[perm[0]] = []
+                        perms_map[perm[0]].append(role.mention if not role.is_default() else '`@everyone`')
 
             for channel in ctx.guild.channels:
                 for role_or_member in channel.overwrites:
@@ -445,7 +427,7 @@ class Tools(commands.Cog):
                 try:
                     reaction, user = await self.bot.wait_for('reaction_add', check=check, timeout=30.0)
                 except TimeoutError:
-                    await ctx.send('Took too long, `aborting`')
+                    await ctx.send(f"{self.bot.my_emojis.error} - Took too long, `aborting`")
                     return
                 else:
                     if reaction.emoji == '❌':
@@ -458,7 +440,7 @@ class Tools(commands.Cog):
                         except discord.errors.Forbidden:
                             await msg.clear_reactions()
 
-        await ctx.send(f'Done - There were {no_perms_count} roles with no perms')
+        await ctx.send(f'Done - There are {no_perms_count} roles with no perms')
 
     ########### Inital Party attempts using dict storage but it is easier to just do some string checking --> no need to store
     # @commands.command(hidden=True)
@@ -525,13 +507,12 @@ class Tools(commands.Cog):
             emojis = ('🎉','🎈','🎂','🍾','🍻','🥂','🍸','🎊','💃','🎇','🎆','🕺','🎶','🙌','🍰','🍹','👯','🎁')
         for channel in ctx.guild.channels:
             clean_name = str(channel.name)
-            for emoji in emojis:
-                clean_name = clean_name.replace(emoji, '')
-            clean_name = clean_name.strip()
+            if clean_name[0] == clean_name[-1] and clean_name[0] in emojis:
+                clean_name = clean_name[1:-2].strip()
             if clean_name != channel.name:
                 await channel.edit(name=clean_name)
                 await sleep(2)
-        await ctx.send('Channel names cleaned up!')
+        await ctx.reply(f"{self.bot.my_emojis.check} - Channel names cleaned up", allowed_mentions=discord.AllowedMentions.none())
 
     @commands.command(aliases=['dark', 'hide'])
     async def go_dark(self, ctx):
@@ -540,15 +521,13 @@ class Tools(commands.Cog):
         await sleep(5)
         await ctx.message.delete()
     
-    @commands.command(aliases=['show'])
+    @commands.command(aliases=['show', 'unhide'])
     async def undark(self, ctx):
         await self.bot.change_presence(status=discord.Status.online)
 
     @commands.command()
-    async def react(self, ctx, message: discord.Message, reaction = None):
+    async def react(self, ctx, message: discord.Message, reaction: str):
         await ctx.message.delete()
-        if reaction == None:
-            await ctx.message.author.send('Provide a reaction `message reaction`')
         await message.add_reaction(reaction)
     
     @commands.command(aliases=['emojibomb'])
@@ -607,57 +586,6 @@ class Tools(commands.Cog):
         await write_data('options', options)
         await ctx.send(f'{ctx.author.mention} set `sec_diff_for_msgs_to_count_as_batch` to **{val}** sec')
 
-    @commands.group(aliases=['massrole'])
-    @commands.guild_only()
-    async def mass_role(self, ctx):
-        pass
-
-    @mass_role.command(aliases=['add'])
-    async def give(self, ctx, role: discord.Role, *, reason=None):
-        msg = await ctx.reply(f'Queued `add role` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
-        count = 0
-        for member in ctx.guild.members:
-            if role not in member.roles:
-                await member.add_roles(role, reason=reason)
-                count += 1
-                await sleep(self.sleep_time)
-        await msg.edit(f':white_check_mark: `Added` {role.mention} to **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
-
-    @mass_role.command(aliases=['take'])
-    async def remove(self, ctx, role: discord.Role, *, reason=None):
-        msg = await ctx.reply(f'Queued `remove role` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
-        count = 0
-        for member in ctx.guild.members:
-            if role in member.roles:
-                await member.remove_roles(role, reason=reason)
-                count += 1
-                await sleep(self.sleep_time)
-        await msg.edit(f':white_check_mark: `Removed` {role.mention} from **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
-
-    @mass_role.command()
-    async def clear(self, ctx):
-        msg = await ctx.reply(f'Queued `clear roles` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
-        count = 0
-        for member in ctx.guild.members:
-            if len(member.roles) > 1:
-                result = await self.clear_user_roles(member)
-                if result:
-                    count += 1
-                    await sleep(self.sleep_time)
-        await msg.edit(f':white_check_mark: `Cleared` roles from **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
-
-    @mass_role.command()
-    async def replace(self, ctx):
-        msg = await ctx.reply(f'Queued `replace roles` to **~{ctx.guild.member_count} members**\n  --> Eta: **{str(timedelta(seconds=int(ctx.guild.member_count*self.sleep_time)))}**')
-        count = 0
-        for member in ctx.guild.members:
-            if str(member.id) in self.tmp_role_storage:
-                result = await self.replace_user_roles(member)
-                if result:
-                    count += 1
-                    await sleep(self.sleep_time)
-        await msg.edit(f':white_check_mark: `Replaced` roles of **{count} members** :grimacing:', allowed_mentions=discord.AllowedMentions.none())
-
     # @commands.command()
     # async def forward(self, ctx, target_message: discord.Message, output_channel_id: int):
     #     await ctx.message.delete()
@@ -670,14 +598,6 @@ class Tools(commands.Cog):
     #                 files.append(await attachment.to_file())
     #         await webhook.send(content=message.content if message.content != None else '', username=message.author.display_name, avatar_url=message.author.display_avatar.url, files=files)
     #         await sleep(self.sleep_time)
-
-    @commands.command()
-    async def nick(self, ctx: Context, nickname: str = None, member: discord.Member = None):
-        if nickname == None:
-            nickname = None
-        if member == None:
-            member = ctx.guild.me
-        await member.edit(nick=nickname)
-
-def setup(bot):
-    bot.add_cog(Tools(bot))
+    
+async def setup(bot):
+    await bot.add_cog(Tools(bot))
