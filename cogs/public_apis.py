@@ -13,9 +13,6 @@ class APIS(commands.Cog):
         self.SEARCH_LIMIT: int = 100
         self.BITLYAPI_KEY: str = getenv('BITLYAPI_KEY')
 
-    async def cog_check(self, ctx):
-        return await self.bot.is_owner(ctx.author)
-    
     @commands.command()
     async def bitsee(self, ctx: Context, bitlink: str = None):
         """Requests the long url from a bit.ly link,
@@ -35,8 +32,6 @@ class APIS(commands.Cog):
             # Check it is a bit.ly link
             bitlink_search = re.search(bitlink_REGEX, bitlink)
             
-        # print('here', bitlink_search)
-
         if bitlink_search:
             bitlink = bitlink_search.group(2)
             async with aiohttp.ClientSession() as session:
@@ -46,22 +41,18 @@ class APIS(commands.Cog):
                 }
                 data = f'{{ "bitlink_id": "{bitlink}" }}'
                 async with session.post('https://api-ssl.bitly.com/v4/expand', data=data, headers=headers) as response:
-                    # print('RESPONDED!')
                     if response.ok:
                         result = await response.json()
-                        # print(datetime.fromtimestamp(result['created_at']))
                         date_time = datetime.fromisoformat(result['created_at'][:-2] + ':' + result['created_at'][-2:])
                         embed = discord.Embed(title=f'Lookup for: `{bitlink}`', description=result['long_url'], timestamp=date_time, color=discord.Colour.green())
                         embed.set_footer(text='Link created at')
-                        # print('created embed')
                         return await ctx.send(embed=embed)
 
                     # When a bitly request does not return the 'ok' status
                     if ctx.args[2] != None:
                         await ctx.reply(f"{self.bot.my_emojis.question} - Invalid bit.ly link")
 
-        # print('Here')
         return await ctx.message.add_reaction('🚫')
 
-def setup(bot):
-    bot.add_cog(APIS(bot))
+async def setup(bot):
+    await bot.add_cog(APIS(bot))
