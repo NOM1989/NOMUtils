@@ -1,3 +1,4 @@
+from bot import NOMUtils
 from .utils.context import Context
 from discord.ext import commands
 from collections import Counter
@@ -13,7 +14,7 @@ owner_id = 421362214558105611
 
 class Admin(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: NOMUtils = bot
         self.last_clear = 0
 
     async def cog_check(self, ctx):
@@ -136,7 +137,7 @@ class Admin(commands.Cog):
     #                 await last_msg.delete()
     #                 deleted += 1
     #                 await sleep(sleep_time)
-    #     await reply.edit(f"{self.bot.config['emojis']['check']} Deleted **{deleted}** message(s) `[in {deleted} channels]`", allowed_mentions = discord.AllowedMentions.none())
+    #     await reply.edit(f"{self.bot.my_emojis.check} Deleted **{deleted}** message(s) `[in {deleted} channels]`", allowed_mentions = discord.AllowedMentions.none())
 
     @commands.command()
     async def nick(self, ctx: Context, member: discord.Member, *, nickname: str = None):
@@ -144,9 +145,9 @@ class Admin(commands.Cog):
             nickname = None
         try:
             await member.edit(nick=nickname)
-            await ctx.message.add_reaction(self.bot.config['emojis']['check'])
+            await ctx.message.add_reaction(self.bot.my_emojis.check)
         except discord.Forbidden:
-            await ctx.message.add_reaction(self.bot.config['emojis']['error'])
+            await ctx.message.add_reaction(self.bot.my_emojis.error)
 
     @nick.error
     async def nick_handler(self, ctx, error):

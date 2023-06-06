@@ -16,7 +16,7 @@ class Context(commands.Context):
 
     async def send_error(self, error_message: str, show_usage: bool = False):
         """Sends an error to the user with optional extra info"""
-        to_send = f"{self.bot.config['emojis']['error']} "
+        to_send = f"{self.bot.my_emojis.error} "
         to_send += error_message
         to_send += f' - `{self._get_cmd_usage()}`' if show_usage else ''
         await self.reply(to_send, allowed_mentions=discord.AllowedMentions.none())

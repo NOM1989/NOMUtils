@@ -54,9 +54,9 @@ class Spotify(commands.Cog):
                 print(response)
                 if response.ok:
                     response_json = await response.json()
-                    await ctx.send(response_json['tracks']['items'][0]['external_urls']['spotify'])
+                    await ctx.reply(response_json['tracks']['items'][0]['external_urls']['spotify'])
                 else:
-                    await ctx.send(f'An error occured: ```py\n{await response.json()}\n```')
+                    await ctx.reply(f"{self.bot.my_emojis.error} - An error occured: ```py\n{await response.json()}\n```")
 
-def setup(bot):
-    bot.add_cog(Spotify(bot))
+async def setup(bot):
+    await bot.add_cog(Spotify(bot))

@@ -73,7 +73,7 @@ class Roles(commands.Cog):
                 await member.add_roles(role, reason=reason)
                 count += 1
                 await sleep(self.sleep_time)
-        await msg.edit(content=f"{self.bot.config['emojis']['check']} `Added` {role.mention} to **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
+        await msg.edit(content=f"{self.bot.my_emojis.check} `Added` {role.mention} to **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
 
     @mass_role.command(aliases=['take'])
     async def remove(self, ctx: Context, role: discord.Role, *, reason=None):
@@ -84,7 +84,7 @@ class Roles(commands.Cog):
                 await member.remove_roles(role, reason=reason)
                 count += 1
                 await sleep(self.sleep_time)
-        await msg.edit(content=f"{self.bot.config['emojis']['check']} `Removed` {role.mention} from **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
+        await msg.edit(content=f"{self.bot.my_emojis.check} `Removed` {role.mention} from **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
 
     @mass_role.command()
     async def clear(self, ctx: Context):
@@ -96,7 +96,7 @@ class Roles(commands.Cog):
                 if result:
                     count += 1
                     await sleep(self.sleep_time)
-        await msg.edit(content=f"{self.bot.config['emojis']['check']} `Cleared` roles from **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
+        await msg.edit(content=f"{self.bot.my_emojis.check} `Cleared` roles from **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
 
     @mass_role.command()
     async def replace(self, ctx: Context):
@@ -108,7 +108,7 @@ class Roles(commands.Cog):
                 if result:
                     count += 1
                     await sleep(self.sleep_time)
-        await msg.edit(content=f"{self.bot.config['emojis']['check']} `Replaced` roles of **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
+        await msg.edit(content=f"{self.bot.my_emojis.check} `Replaced` roles of **{count} members** :grimacing:", allowed_mentions=discord.AllowedMentions.none())
 
 
 async def setup(bot):

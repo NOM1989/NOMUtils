@@ -3,6 +3,8 @@ import discord
 from difflib import get_close_matches
 from random import choice
 
+from bot import NOMUtils
+
 # Define a simple View that waits till the OK button pressed or timeout
 class OkButton(discord.ui.View):
     def __init__(self, ctx: commands.Context,):
@@ -43,7 +45,7 @@ class OkButton(discord.ui.View):
 
 class Rubber(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: NOMUtils = bot
         self.flip_approved = []
 
     # Creates a list of user_ids that have added a flip to the flip db
@@ -75,7 +77,7 @@ class Rubber(commands.Cog):
         if not self.flip_approved:
             self.flip_approved = await self.fetch_flip_approved()
         if ctx.author.id not in self.flip_approved: #Handle the non flip approved
-            await ctx.reply(f"{self.bot.config['emojis']['error']} Sorry, you must submit a flip video to use this command!", allowed_mentions=discord.AllowedMentions.none())
+            await ctx.reply(f"{self.bot.my_emojis.error} Sorry, you must submit a flip video to use this command!", allowed_mentions=discord.AllowedMentions.none())
             return
         
         con = self.bot.pool

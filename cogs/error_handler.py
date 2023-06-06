@@ -8,6 +8,8 @@ For a list of exceptions:
 https://discordpy.readthedocs.io/en/latest/ext/commands/api.html#exceptions
 """
 from random import choice, randint
+
+from bot import NOMUtils
 from .utils.context import Context
 from discord.ext import commands
 from inspect import Parameter
@@ -20,7 +22,7 @@ import sys
 
 class CommandErrorHandler(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: NOMUtils = bot
 
     # def add_extra(self, ctx: Context):
     #     return f' {ctx.error_message}' if ctx.error_message else ''
@@ -39,7 +41,7 @@ class CommandErrorHandler(commands.Cog):
 
     async def send_error(self, ctx: Context, *, emoji: str = None, default_text: str = None):
         """Sends an error to the user with optional extra info"""
-        to_send = f"{self.bot.config['emojis'][emoji if emoji else 'error']} "
+        to_send = f"{emoji if emoji else self.bot.my_emojis.error} "
         try:
             to_send += ctx.error_message or default_text
         except TypeError:
@@ -99,14 +101,14 @@ class CommandErrorHandler(commands.Cog):
             isinstance(error, commands.BadUnionArgument) and error.param.name == "who" # When using a member/user union
         ):  # Used when converting to a discord member or user Object
             await self.send_error(
-                ctx, emoji="question", default_text="Sorry, I couldn't recognise that user"
+                ctx, emoji=self.bot.my_emojis.question, default_text="Sorry, I couldn't recognise that user"
             )
 
         elif (
             isinstance(error, commands.MemberNotFound) # When converting to discord.member
         ):
             await self.send_error(
-                ctx, emoji="question", default_text="Sorry, I couldn't find that member"
+                ctx, emoji=self.bot.my_emojis.question, default_text="Sorry, I couldn't find that member"
             )
 
 

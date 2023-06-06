@@ -97,7 +97,7 @@ class ChauBlock(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.guild.id in self.ad_guilds and message.author.id in self.ad_posters and message.attachments:
+        if message.guild and message.guild.id in self.ad_guilds and message.author.id in self.ad_posters and message.attachments:
             # Only handle one as I cba to handle all
             attachment = message.attachments[0]
             content_type = attachment.content_type.split('/')[0]

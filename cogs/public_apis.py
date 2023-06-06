@@ -7,10 +7,6 @@ import discord
 import aiohttp
 import re
 
-class InvalidLink(commands.CommandError):
-    def __str__(self):
-        return 'Invaid bit.ly link'
-
 class APIS(commands.Cog):
     def __init__(self, bot):
         self.bot: NOMUtils = bot
@@ -20,10 +16,6 @@ class APIS(commands.Cog):
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
     
-    async def cog_command_error(self, ctx: Context, error: commands.CommandError):
-        if isinstance(error, InvalidLink):
-            await ctx.send_error(str(error))
-
     @commands.command()
     async def bitsee(self, ctx: Context, bitlink: str = None):
         """Requests the long url from a bit.ly link,
@@ -31,6 +23,7 @@ class APIS(commands.Cog):
         or searches last SEARCH_LIMIT messages in channel for link"""
 
         bitlink_REGEX = r'(https?:\/\/)?((bit\.ly)\S*)\b'
+        bitlink_search = None
         
         if bitlink == None:
             # Search channel for link
@@ -65,7 +58,7 @@ class APIS(commands.Cog):
 
                     # When a bitly request does not return the 'ok' status
                     if ctx.args[2] != None:
-                        raise InvalidLink()
+                        await ctx.reply(f"{self.bot.my_emojis.question} - Invalid bit.ly link")
 
         # print('Here')
         return await ctx.message.add_reaction('🚫')
