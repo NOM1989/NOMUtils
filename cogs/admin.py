@@ -8,9 +8,10 @@ import discord
 import re
 
 
-rog_server_id = 593542699081269248
-admin_role_id = 691357082070286456 #The Council
-owner_id = 421362214558105611
+# rog_server_id = 593542699081269248
+# admin_role_id = 691357082070286456  # The Council
+# owner_id = 421362214558105611
+
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -21,7 +22,7 @@ class Admin(commands.Cog):
         return await self.bot.is_owner(ctx.author)
         # return not ctx.author.bot
 
-    @commands.command(hidden=True, aliases=['purge'])
+    @commands.command(hidden=True, aliases=["purge"])
     async def clear(self, ctx: Context, *, amount: int):
         """Clears the specified amount of messages"""
         # del_message_list = ctx.channel.purge(limit=amount) #If you want to get the messages deleted
@@ -31,25 +32,30 @@ class Admin(commands.Cog):
                 await ctx.channel.purge(limit=amount, before=ctx.message)
                 self.last_clear = round(time(), 6)
             else:
-                await ctx.send('Cleared within 2 seconds, assuming message repeated due to connection issues.', delete_after=8.0)
+                await ctx.send(
+                    f"{self.bot.my_emojis.error} Cleared within 2 seconds, assuming message repeated due to connection issues.",
+                    delete_after=8.0,
+                )
         else:
-            await ctx.send('Amount > 100, assuming typo.', delete_after=8.0)
-    
-    @commands.command(hidden=True, aliases=['mpurge'])
+            await ctx.send(f"{self.bot.my_emojis.error} Clear amount > 100, assuming typo.", delete_after=8.0)
+
+    @commands.command(hidden=True, aliases=["mpurge"])
     async def mclear(self, ctx: Context, *, target_m: discord.Message):
         """Clears up to a specified message"""
         deleted = await ctx.channel.purge(limit=100, after=target_m)
-        await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
+        await ctx.send(f"{self.bot.my_emojis.check} Deleted {len(deleted)} message(s)", delete_after=3)
 
-    #Delete messages between certain messages
-    @commands.command(hidden=True, aliases=['del'])
-    async def delete(self, ctx: Context, m_from: discord.Message, m_to: discord.Message):
-        '''Deletes messages with405764666531381248in the 2 given messages'''
+    # Delete messages between certain messages
+    @commands.command(hidden=True, aliases=["del"])
+    async def delete(
+        self, ctx: Context, m_from: discord.Message, m_to: discord.Message
+    ):
+        """Deletes messages within the 2 given messages"""
         await ctx.message.delete()
         deleted = await ctx.channel.purge(limit=100, before=m_to, after=m_from)
-        await ctx.send(f'Deleted {len(deleted)} message(s)', delete_after=3)
+        await ctx.send(f"{self.bot.my_emojis.check} Deleted {len(deleted)} message(s)", delete_after=3)
 
-    #My inital cleanup command, but after some inspiration from R. Danny I redesigned it
+    # My inital cleanup command, but after some inspiration from R. Danny I redesigned it
     # @commands.command(aliases=['clean'])
     # async def cleanup(self, ctx):
     #     def check_bot(message):
@@ -69,14 +75,21 @@ class Admin(commands.Cog):
     #     await ctx.send(f'{len(deleted_messages)} messages cleaned up.\n{display_removed}', delete_after=10)
 
     async def _cleanup_messages(self, ctx, search):
-        prefixes = ('!', '?', '+', '.')
-        regex_acceptable = ''.join(prefixes)
+        prefixes = ("!", "?", "+", ".")
+        regex_acceptable = "".join(prefixes)
 
         def check_bot(message):
-            #The regex matches a prefix followed by a char that is not one of the prefixes eg: '!!ping' will not be deleted but '!ping' will be - this means messages like '!!!' or '...' are not removed
-            return message.author.bot or (len(message.content) > 1 and re.search(fr'[{regex_acceptable}][^{regex_acceptable}]', message.content[:2]))
+            # The regex matches a prefix followed by a char that is not one of the prefixes eg: '!!ping' will not be deleted but '!ping' will be - this means messages like '!!!' or '...' are not removed
+            return message.author.bot or (
+                len(message.content) > 1
+                and re.search(
+                    rf"[{regex_acceptable}][^{regex_acceptable}]", message.content[:2]
+                )
+            )
 
-        deleted_messages = await ctx.channel.purge(limit=search, check=check_bot, before=ctx.message)
+        deleted_messages = await ctx.channel.purge(
+            limit=search, check=check_bot, before=ctx.message
+        )
         return Counter(message.author.display_name for message in deleted_messages)
 
     # #Add a check here if the server is rog, allow council else: owner only
@@ -90,36 +103,40 @@ class Admin(commands.Cog):
     #         to_return = ctx.guild.get_role(admin_role_id) in ctx.author.roles #The council
     #     return to_return
 
-    @commands.command(aliases=['clean'])
+    @commands.command(aliases=["clean"])
     # @commands.check(rog_check)
     async def cleanup(self, ctx: Context, search=60):
-        '''
+        """
         Cleans up bot and invocation messages in a channel.
 
         If a search number is specified, it searches that many messages to delete.
         Search - min: 2, max: 1000. Default: 60
-        '''
-        
+        """
+
         search = min(max(2, search), 1000)
 
         users = await self._cleanup_messages(ctx, search)
         # users will look like this: Counter({'-ers!': 5}) #Display_name followed by the amount of their messages
         deleted_count = sum(users.values())
-        #Now we build the display result
-        removed_messages = [f"{deleted_count} message{'' if deleted_count == 1 else 's'} cleaned up."]
-        if deleted_count: #If any messages were deleted display who's they were
-            removed_messages.append('') #Adds a break when we later join them
-            #The following lambda function (lambda x: x[1]) is equivalent to:
-            '''
+        # Now we build the display result
+        removed_messages = [
+            f"{deleted_count} message{'' if deleted_count == 1 else 's'} cleaned up."
+        ]
+        if deleted_count:  # If any messages were deleted display who's they were
+            removed_messages.append("")  # Adds a break when we later join them
+            # The following lambda function (lambda x: x[1]) is equivalent to:
+            """
             def func_name(x):
                 return x[1]
 
             key would be key=func_name
-            '''
+            """
             users = sorted(users.items(), key=lambda x: x[1], reverse=True)
-            removed_messages.extend(f'- **{author}**: {count}' for author, count in users)
+            removed_messages.extend(
+                f"- **{author}**: {count}" for author, count in users
+            )
 
-        await ctx.send('\n'.join(removed_messages), delete_after=10)
+        await ctx.send("\n".join(removed_messages), delete_after=10)
         await sleep(10)
         await ctx.message.delete()
 
@@ -141,7 +158,7 @@ class Admin(commands.Cog):
 
     @commands.command()
     async def nick(self, ctx: Context, member: discord.Member, *, nickname: str = None):
-        if nickname == None:
+        if nickname is None:
             nickname = None
         try:
             await member.edit(nick=nickname)
@@ -156,8 +173,7 @@ class Admin(commands.Cog):
         The global on_command_error will still be invoked after.
         """
         if isinstance(error, commands.MissingRequiredArgument):
-            ctx.error_message = 'You must provide a member'
-            ctx.error_add_usage = True
+            ctx.error_message = "You must provide a member"
 
 
 async def setup(bot):

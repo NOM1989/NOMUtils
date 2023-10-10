@@ -39,21 +39,23 @@ class CommandErrorHandler(commands.Cog):
                     usage += f" [{param.name}]"
         return usage
 
-    async def send_error(self, ctx: Context, *, emoji: str = None, default_text: str = None):
+    async def send_error(
+        self, ctx: Context, *, emoji: str = None, default_text: str = None
+    ):
         """Sends an error to the user with optional extra info"""
         to_send = f"{emoji if emoji else self.bot.my_emojis.error} "
         try:
             to_send += ctx.error_message or default_text
         except TypeError:
-            raise TypeError("WARNING: Bad usage of error handling, neither ctx.error_message or default_text was provided")
+            raise TypeError(
+                "WARNING: Bad usage of error handling, neither ctx.error_message or default_text was provided"
+            )
         # Add any additional error info I want displayed to ctx.error_message = error_message - see public.py for eg
         to_send += f" - `{self.get_cmd_usage(ctx)}`" if ctx.error_add_usage else ""
         await ctx.reply(to_send, allowed_mentions=discord.AllowedMentions.none())
 
     @commands.Cog.listener()
-    async def on_command_error(
-        self, ctx: Context, error: commands.CommandError
-    ):
+    async def on_command_error(self, ctx: Context, error: commands.CommandError):
         """The event triggered when an error is raised while invoking a command."""
 
         # This prevents any commands with local handlers being handled here in on_command_error.
@@ -98,19 +100,23 @@ class CommandErrorHandler(commands.Cog):
             # await ctx.send(f"`{error.__class__.__name__}` - \'**{error.param}**\'{str(error).strip(str(error.param))}")
 
         elif (
-            isinstance(error, commands.BadUnionArgument) and error.param.name == "who" # When using a member/user union
+            isinstance(error, commands.BadUnionArgument)
+            and error.param.name == "who"  # When using a member/user union
         ):  # Used when converting to a discord member or user Object
             await self.send_error(
-                ctx, emoji=self.bot.my_emojis.question, default_text="Sorry, I couldn't recognise that user"
+                ctx,
+                emoji=self.bot.my_emojis.question,
+                default_text="Sorry, I couldn't recognise that user",
             )
 
-        elif (
-            isinstance(error, commands.MemberNotFound) # When converting to discord.member
-        ):
+        elif isinstance(
+            error, commands.MemberNotFound
+        ):  # When converting to discord.member
             await self.send_error(
-                ctx, emoji=self.bot.my_emojis.question, default_text="Sorry, I couldn't find that member"
+                ctx,
+                emoji=self.bot.my_emojis.question,
+                default_text="Sorry, I couldn't find that member",
             )
-
 
         # I would put this in ignored but I will probably forget then not know why something isnt working
         elif isinstance(error, commands.CheckFailure):
@@ -150,7 +156,6 @@ class CommandErrorHandler(commands.Cog):
         # elif isinstance(error, commands.BadArgument):
         #     if ctx.command.qualified_name == 'tag list':  # Check if the command being invoked is 'tag list'
         #         await ctx.send('I could not find that member. Please try again.')
-
 
         # Don't display errors with a message in the console, just send in discord
         elif ctx.error_message:
