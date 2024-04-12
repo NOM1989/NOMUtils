@@ -1,13 +1,12 @@
 from dotenv import load_dotenv
-
-load_dotenv()
-
-from os import getenv
 from bot import NOMUtils
+from os import getenv
 import asyncpg
 import asyncio
 import logging
 import discord
+
+load_dotenv()
 
 
 async def run_bot():

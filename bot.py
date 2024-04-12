@@ -22,13 +22,26 @@ import sys
 #     "cogs.wordcloud",
 # )
 extensions = (
-    "cogs.owner", 
+    "cogs.owner",
     "cogs.error_handler",
 )
 
-# wordcloud, admin, public, trolling, 
+# wordcloud, admin, public, trolling, roles, public_apis, tools
+
+
+class MyEmojis:
+    """Class to represent custom emojis the bot makes use of"""
+
+    def __init__(self) -> None:
+        self.error = "<:ers_error:1113498344736694403>"
+        self.check = "<:ers_check:1113497881991712809>"
+        self.question = "<:ers_question:1113497012025962507>"
+        self.typing = "<a:typing:931524283065319446>"
+
 
 class NOMUtils(commands.Bot):
+    """Custom bot context"""
+
     def __init__(self):
         # Intents initialisation
         intents = discord.Intents.default()
@@ -41,22 +54,17 @@ class NOMUtils(commands.Bot):
             command_prefix=["e!"],
             description="NOM#7666's Utility bot",
             owner_id=421362214558105611,
-            allowed_mentions=discord.AllowedMentions(everyone=False), # allowed_mentions makes it so not able to @everyone ever (globally)
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False
+            ),  # allowed_mentions makes it so not able to @everyone ever (globally)
             case_insensitive=True,
             help_command=None,
             intents=intents,
         )
 
-        self.config = {
-            "emojis": {
-                "error": "<:ers_error:1113498344736694403>",
-                "check": "<:ers_check:1113497881991712809>",
-                "question": "<:ers_question:1113497012025962507>",
-            },
-            "keys": {},
-        }
+        self.my_emojis = MyEmojis()  # Custom emojis used through out the bot
 
-        self.pool: asyncpg.Pool = None # type: ignore
+        self.pool: asyncpg.Pool = None  # type: ignore
 
         # self.cache: dict[int, GuildInfo] = {}
         # self.load_keys()
