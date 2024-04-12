@@ -79,6 +79,23 @@ class Owner(commands.Cog):
         )
         await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())
 
+    @commands.command(name="commands")
+    async def list_commands(self, ctx: Context):
+        embed = discord.Embed(
+            title="Loaded Cogs",
+        )
+
+        for cog in self.bot.cogs:
+            cog = self.bot.get_cog(cog)
+
+            command_checks = []
+            for cmd in cog.get_commands():
+                command_checks.append(f'{cmd.name.upper()} - {" ".join(["cog_check"] if cog._get_overridden_method(cog.cog_check) else [] + [check.__qualname__.split(".")[0] for check in cmd.checks])}')
+
+            embed.add_field(name=cog.qualified_name, value="\n".join(command_checks))
+
+        await ctx.reply(embed=embed, allowed_mentions=discord.AllowedMentions.none())
+
     @commands.command(aliases=["fuckoff"])
     async def leave(self, ctx):
         await ctx.send("later l0$$ers")
