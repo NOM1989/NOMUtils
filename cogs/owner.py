@@ -14,7 +14,7 @@ class Owner(commands.Cog):
         return await self.bot.is_owner(ctx.author)
 
     @commands.command(hidden=True)
-    async def ping(self, ctx):
+    async def ping(self, ctx: Context):
         await ctx.send("Pong! `Latency: {}ms`".format(round(self.bot.latency * 1000)))
 
     @commands.command(hidden=True, aliases=["close"])
